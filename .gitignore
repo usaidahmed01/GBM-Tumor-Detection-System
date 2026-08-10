@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Data - never commit patient/image datasets
+/data/source/*
+/data/raw/*
+/data/interim/*
+!/data/source/.gitkeep
+!/data/raw/.gitkeep
+!/data/interim/.gitkeep
+
+# Generated manifests/reports can be committed if de-identified, but default to local
+/data/manifests/*.csv
+/data/reports/*.json
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
