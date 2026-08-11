@@ -1,0 +1,35 @@
+{
+  "phase": "Phase 2 Step 1",
+  "status": "PASS",
+  "release": "classification_v1.0",
+  "manifest": "data\\releases\\classification_v1.0\\classification_split_manifest.csv",
+  "fold": 0,
+  "dataset_counts": {
+    "train": 157,
+    "validation": 39,
+    "test": 32
+  },
+  "input_shape": [
+    2,
+    3,
+    384,
+    384
+  ],
+  "output_shape": [
+    2
+  ],
+  "smoke_loss": 0.66410231590271,
+  "pretrained_weights": true,
+  "model": {
+    "name": "EfficientNetV2-S",
+    "binary_output_logits": 1,
+    "total_parameters": 20178769,
+    "trainable_parameters_initial_warmup": 1281,
+    "backbone_frozen": true
+  },
+  "device": {
+    "device": "cpu",
+    "torch_version": "2.13.0+cpu",
+    "cuda_available": false
+  }
+}
