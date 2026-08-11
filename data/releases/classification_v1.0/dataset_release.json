@@ -1,0 +1,64 @@
+{
+  "release_name": "classification_v1.0",
+  "created_at_utc": "2026-08-11T16:49:49.529589+00:00",
+  "purpose": "Frozen Phase 1 classification dataset release for Phase 2 model development.",
+  "ground_truth_definition": {
+    "yes": "GBM (project-defined label)",
+    "no": "No GBM (project-defined label)"
+  },
+  "important_limitations": [
+    "Supplied 2D files do not independently verify pathology/molecular diagnosis.",
+    "Patient identifiers/grouping are unavailable, so patient-level separation cannot be guaranteed.",
+    "Near-duplicate/leakage groups are kept within a single outer split and a single CV fold.",
+    "The locked test set must not be used for training, hyperparameter selection, calibration, threshold selection, or early stopping."
+  ],
+  "summary": {
+    "total_samples": 228,
+    "development_samples": 196,
+    "test_samples": 32,
+    "class_distribution": {
+      "development": {
+        "yes": 121,
+        "no": 75
+      },
+      "test": {
+        "yes": 20,
+        "no": 12
+      }
+    },
+    "cv_fold_sizes": {
+      "0": 39,
+      "1": 39,
+      "2": 39,
+      "3": 40,
+      "4": 39
+    },
+    "outer_group_leakage": 0,
+    "cv_group_leakage": 0,
+    "all_quality_pass": true,
+    "all_standardized_files_present": true
+  },
+  "artifacts": {
+    "split_manifest": {
+      "path": "data\\manifests\\classification_split_manifest.csv",
+      "sha256": "ec3dde7a6970808715a07d130c7fd997bd9676f6b1ac0e2de1eeb8c52f298f12"
+    },
+    "quality_manifest": {
+      "path": "data\\manifests\\classification_quality_manifest.csv",
+      "sha256": "0dba0b8267d2f104407f760df120bae55f668ff36e7123aa90d8608ae5b00831"
+    },
+    "preprocessing_config": {
+      "path": "data\\reports\\phase1_step3_preprocessing_config.json",
+      "sha256": "61d81e4e6f701684156fc0556991ed6d2f8946f9e2c5c7bd2f363e47a76b60ab"
+    },
+    "split_config": {
+      "path": "data\\reports\\phase1_step4_split_config.json",
+      "sha256": "24d93b782657d21431431755ae75dc77b701c9cdde357c703aba6e969a45a1fb"
+    },
+    "split_report": {
+      "path": "data\\reports\\phase1_step4_split_report.json",
+      "sha256": "efdcfa3896119538fdf5fd3a9c555c9c9c73d5f8ffc75aa05b7ce1ade4178d27"
+    }
+  },
+  "frozen_manifest_sha256": "ec3dde7a6970808715a07d130c7fd997bd9676f6b1ac0e2de1eeb8c52f298f12"
+}
