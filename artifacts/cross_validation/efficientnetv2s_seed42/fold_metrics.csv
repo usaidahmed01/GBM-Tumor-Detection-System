@@ -1,0 +1,2 @@
+fold,validation_samples,threshold,accuracy,precision_ppv,recall_sensitivity,specificity,negative_predictive_value,f1,roc_auc,pr_auc,brier_score,expected_calibration_error_10bin,tp,tn,fp,fn,checkpoint
+0,39,0.5,0.41025641025641024,0.5263157894736842,0.4166666666666667,0.4,0.3,0.46511627906976744,0.3555555555555555,0.5562587537011562,0.25568060547975124,0.11272838100408893,10,6,9,14,artifacts\experiments\efficientnetv2s_fold0_seed42\checkpoints\best_model.pt

@@ -1,23 +1,137 @@
+# ============================================================
+# AI-Based Clinical Decision Support System for Early
+# Identification of Glioblastoma Multiforme
+# ============================================================
+
+# -------------------------
 # Python
+# -------------------------
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# -------------------------
+# Virtual environments
+# -------------------------
 .venv/
+venv/
+env/
+ENV/
 
-# Data - never commit patient/image datasets
-/data/source/*
-/data/raw/*
-/data/interim/*
-!/data/source/.gitkeep
-!/data/raw/.gitkeep
-!/data/interim/.gitkeep
+# -------------------------
+# Environment / secrets
+# -------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
 
-# Generated manifests/reports can be committed if de-identified, but default to local
-/data/manifests/*.csv
-/data/reports/*.json
-
-# OS/editor
-.DS_Store
-Thumbs.db
+# -------------------------
+# IDE / editor
+# -------------------------
 .vscode/
 .idea/
+*.code-workspace
+
+# -------------------------
+# OS files
+# -------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# -------------------------
+# Logs / temporary files
+# -------------------------
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+~$*
+
+# -------------------------
+# LOCAL MEDICAL / DATASET DATA
+# Never commit MRI, DICOM, NIfTI, patient data, derived images,
+# local manifests, dataset releases, or source archives.
+# -------------------------
+/data/
+
+# Medical imaging formats anywhere in the repository
+*.dcm
+*.dicom
+*.nii
+*.nii.gz
+
+# Dataset/archive files
+*.rar
+*.7z
+*.tar
+*.tar.gz
+
+# -------------------------
+# MODEL WEIGHTS / CHECKPOINTS
+# Keep code + lightweight metrics in Git; keep trained weights out.
+# -------------------------
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.h5
+*.keras
+*.joblib
+
+# Explicit training checkpoint locations
+/artifacts/experiments/**/checkpoints/
+/checkpoints/
+/models/weights/
+
+# -------------------------
+# Experiment trackers / caches
+# -------------------------
+wandb/
+runs/
+lightning_logs/
+mlruns/
+.tensorboard/
+tensorboard/
+
+# -------------------------
+# Local databases / storage
+# -------------------------
+*.db
+*.sqlite
+*.sqlite3
+/storage/
+/uploads/
+
+# -------------------------
+# Build / packaging
+# -------------------------
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# -------------------------
+# Jupyter
+# -------------------------
+.ipynb_checkpoints/
+
+# -------------------------
+# Optional local profiling / debug outputs
+# -------------------------
+profiles/
+debug_outputs/

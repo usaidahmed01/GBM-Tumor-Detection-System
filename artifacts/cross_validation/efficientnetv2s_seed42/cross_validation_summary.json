@@ -1,0 +1,64 @@
+{
+  "status": "COMPLETE",
+  "model": "EfficientNetV2-S",
+  "dataset_release": "classification_v1.0",
+  "seed": 42,
+  "folds": [
+    0
+  ],
+  "device": {
+    "device": "cpu",
+    "torch_version": "2.13.0+cpu",
+    "cuda_available": false
+  },
+  "locked_test_used": false,
+  "coverage": {
+    "expected_oof_samples": 39,
+    "actual_oof_samples": 39,
+    "duplicate_oof_samples": 0,
+    "locked_test_leakage": 0,
+    "missing_oof_samples": 0
+  },
+  "fold_roc_auc_mean": 0.3555555555555555,
+  "fold_roc_auc_std": 0.0,
+  "fold_pr_auc_mean": 0.5562587537011562,
+  "fold_pr_auc_std": 0.0,
+  "pooled_oof_metrics_at_0_5": {
+    "threshold": 0.5,
+    "accuracy": 0.41025641025641024,
+    "precision_ppv": 0.5263157894736842,
+    "recall_sensitivity": 0.4166666666666667,
+    "specificity": 0.4,
+    "negative_predictive_value": 0.3,
+    "f1": 0.46511627906976744,
+    "roc_auc": 0.3555555555555555,
+    "pr_auc": 0.5562587537011562,
+    "brier_score": 0.25568060547975124,
+    "expected_calibration_error_10bin": 0.11272838100408893,
+    "tp": 10,
+    "tn": 6,
+    "fp": 9,
+    "fn": 14
+  },
+  "pooled_oof_roc_auc_ci": {
+    "metric": "roc_auc",
+    "confidence": 0.95,
+    "n_requested": 1000,
+    "n_valid": 1000,
+    "lower": 0.18887345679012346,
+    "upper": 0.545052414905356,
+    "median": 0.3527777777777778
+  },
+  "pooled_oof_pr_auc_ci": {
+    "metric": "pr_auc",
+    "confidence": 0.95,
+    "n_requested": 1000,
+    "n_valid": 1000,
+    "lower": 0.397124699190321,
+    "upper": 0.7825398791701433,
+    "median": 0.5781200556781996
+  },
+  "false_negatives_at_0_5": 14,
+  "false_positives_at_0_5": 9,
+  "important_note": "Threshold 0.5 results are monitoring/evaluation only. Clinical thresholds and calibration are not selected in this step."
+}

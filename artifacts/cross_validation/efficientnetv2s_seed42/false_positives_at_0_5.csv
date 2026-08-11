@@ -1,0 +1,10 @@
+sample_id,class_name,target,probability_gbm,fold,checkpoint_epoch,checkpoint_stage
+no_0e2f7a4ea3e0124e,no,0,0.5586065649986267,0,1,warmup
+no_219987922e3461ef,no,0,0.5264871120452881,0,1,warmup
+no_29504dbbe42208cd,no,0,0.5044277906417847,0,1,warmup
+no_2d07d5dc31a6f83f,no,0,0.5233045816421509,0,1,warmup
+no_42c0923d95ea398b,no,0,0.5846577286720276,0,1,warmup
+no_81f4b76bdbd241ba,no,0,0.5108451247215271,0,1,warmup
+no_ab01efa9ce7ad51d,no,0,0.5316163301467896,0,1,warmup
+no_bec663631a5dca91,no,0,0.5203619599342346,0,1,warmup
+no_e34b6fd8d386909b,no,0,0.5263741612434387,0,1,warmup
