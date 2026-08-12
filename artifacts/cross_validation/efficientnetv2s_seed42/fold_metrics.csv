@@ -1,2 +1,2 @@
 fold,validation_samples,threshold,accuracy,precision_ppv,recall_sensitivity,specificity,negative_predictive_value,f1,roc_auc,pr_auc,brier_score,expected_calibration_error_10bin,tp,tn,fp,fn,checkpoint
-0,39,0.5,0.41025641025641024,0.5263157894736842,0.4166666666666667,0.4,0.3,0.46511627906976744,0.3555555555555555,0.5562587537011562,0.25568060547975124,0.11272838100408893,10,6,9,14,artifacts\experiments\efficientnetv2s_fold0_seed42\checkpoints\best_model.pt
+4,39,0.5,0.7948717948717948,1.0,0.6666666666666666,1.0,0.6521739130434783,0.8,0.9694444444444446,0.9831534407621363,0.12563620846684848,0.1770272137453923,16,15,0,8,artifacts\experiments\efficientnetv2s_fold4_seed42\checkpoints\best_model.pt

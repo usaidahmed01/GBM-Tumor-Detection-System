@@ -1,0 +1,20 @@
+{
+  "fold": 2,
+  "validation_samples": 39,
+  "threshold": 0.5,
+  "accuracy": 0.7435897435897436,
+  "precision_ppv": 0.9375,
+  "recall_sensitivity": 0.625,
+  "specificity": 0.9333333333333333,
+  "negative_predictive_value": 0.6086956521739131,
+  "f1": 0.75,
+  "roc_auc": 0.9583333333333334,
+  "pr_auc": 0.9713112217617785,
+  "brier_score": 0.15091298467844602,
+  "expected_calibration_error_10bin": 0.2540898737617028,
+  "tp": 15,
+  "tn": 14,
+  "fp": 1,
+  "fn": 9,
+  "checkpoint": "artifacts\\experiments\\efficientnetv2s_fold2_seed42\\checkpoints\\best_model.pt"
+}
