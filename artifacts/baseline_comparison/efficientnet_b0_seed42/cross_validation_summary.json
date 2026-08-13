@@ -1,0 +1,52 @@
+{
+  "status": "COMPLETE",
+  "model_name": "efficientnet_b0",
+  "folds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "oof_samples": 196,
+  "locked_test_used": false,
+  "fold_roc_auc_mean": 0.9094666666666666,
+  "fold_roc_auc_std": 0.03605469096720617,
+  "fold_pr_auc_mean": 0.9449618411294995,
+  "fold_pr_auc_std": 0.022119156257075268,
+  "pooled_oof_metrics_at_0_5": {
+    "threshold": 0.5,
+    "accuracy": 0.8112244897959183,
+    "precision_ppv": 0.8620689655172413,
+    "recall_sensitivity": 0.8264462809917356,
+    "specificity": 0.7866666666666666,
+    "negative_predictive_value": 0.7375,
+    "f1": 0.8438818565400844,
+    "roc_auc": 0.8975206611570248,
+    "pr_auc": 0.9339816881645898,
+    "brier_score": 0.14725845246783628,
+    "expected_calibration_error_10bin": 0.14268945659301718,
+    "tp": 100,
+    "tn": 59,
+    "fp": 16,
+    "fn": 21
+  },
+  "pooled_oof_roc_auc_ci": {
+    "metric": "roc_auc",
+    "confidence": 0.95,
+    "n_requested": 1000,
+    "n_valid": 1000,
+    "lower": 0.8540796661988772,
+    "upper": 0.9356078359721416,
+    "median": 0.8983032510172608
+  },
+  "pooled_oof_pr_auc_ci": {
+    "metric": "pr_auc",
+    "confidence": 0.95,
+    "n_requested": 1000,
+    "n_valid": 1000,
+    "lower": 0.8985253852420197,
+    "upper": 0.9621584041634461,
+    "median": 0.9354552810894763
+  }
+}

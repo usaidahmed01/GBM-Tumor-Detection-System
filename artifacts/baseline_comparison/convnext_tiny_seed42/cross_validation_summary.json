@@ -1,0 +1,52 @@
+{
+  "status": "COMPLETE",
+  "model_name": "convnext_tiny",
+  "folds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "oof_samples": 196,
+  "locked_test_used": false,
+  "fold_roc_auc_mean": 0.9467111111111111,
+  "fold_roc_auc_std": 0.05072539237993894,
+  "fold_pr_auc_mean": 0.9647274101987872,
+  "fold_pr_auc_std": 0.03717787482057023,
+  "pooled_oof_metrics_at_0_5": {
+    "threshold": 0.5,
+    "accuracy": 0.8877551020408163,
+    "precision_ppv": 0.9090909090909091,
+    "recall_sensitivity": 0.9090909090909091,
+    "specificity": 0.8533333333333334,
+    "negative_predictive_value": 0.8533333333333334,
+    "f1": 0.9090909090909091,
+    "roc_auc": 0.9323415977961432,
+    "pr_auc": 0.9508199533567243,
+    "brier_score": 0.09288649818772109,
+    "expected_calibration_error_10bin": 0.07281607366642175,
+    "tp": 110,
+    "tn": 64,
+    "fp": 11,
+    "fn": 11
+  },
+  "pooled_oof_roc_auc_ci": {
+    "metric": "roc_auc",
+    "confidence": 0.95,
+    "n_requested": 1000,
+    "n_valid": 1000,
+    "lower": 0.8963358558548811,
+    "upper": 0.9655585846626787,
+    "median": 0.93354859426288
+  },
+  "pooled_oof_pr_auc_ci": {
+    "metric": "pr_auc",
+    "confidence": 0.95,
+    "n_requested": 1000,
+    "n_valid": 1000,
+    "lower": 0.9187496567038179,
+    "upper": 0.9778197725069772,
+    "median": 0.9526882877807401
+  }
+}

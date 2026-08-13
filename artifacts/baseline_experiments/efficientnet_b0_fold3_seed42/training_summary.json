@@ -1,0 +1,48 @@
+{
+  "status": "COMPLETE",
+  "model_name": "efficientnet_b0",
+  "dataset_release": "classification_v1.0",
+  "fold": 3,
+  "seed": 42,
+  "train_samples": 156,
+  "validation_samples": 40,
+  "locked_test_used": false,
+  "pretrained_weights": true,
+  "device": {
+    "device": "cpu",
+    "torch_version": "2.13.0+cpu",
+    "cuda_available": false
+  },
+  "best_validation_roc_auc": 0.8640000000000001,
+  "best_validation_loss": 0.386510207131505,
+  "best_stage": "finetune",
+  "best_global_epoch": 18,
+  "model_metadata": {
+    "model_name": "efficientnet_b0",
+    "total_parameters": 4008829,
+    "trainable_parameters_current": 3157021
+  },
+  "config": {
+    "model_name": "efficientnet_b0",
+    "release_name": "classification_v1.0",
+    "fold": 3,
+    "seed": 42,
+    "batch_size": 2,
+    "num_workers": 0,
+    "warmup_epochs": 5,
+    "finetune_epochs": 15,
+    "finetune_blocks": 3,
+    "head_lr_warmup": 0.001,
+    "head_lr_finetune": 0.0001,
+    "backbone_lr_finetune": 1e-05,
+    "weight_decay": 0.0001,
+    "patience": 5,
+    "min_delta_auc": 0.0001,
+    "monitor_threshold": 0.5,
+    "use_class_weight": true,
+    "amp": true,
+    "max_train_batches": 0,
+    "max_val_batches": 0
+  },
+  "checkpoint": "artifacts\\baseline_experiments\\efficientnet_b0_fold3_seed42\\checkpoints\\best_model.pt"
+}
