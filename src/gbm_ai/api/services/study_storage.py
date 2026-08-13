@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-import uuid
 from typing import BinaryIO
 
 from sqlalchemy.orm import Session
 
 from gbm_ai.api.models.analysis import Study, StudyStatus
+from gbm_ai.api.models.audit import (
+    AuditAction,
+    AuditActorType,
+    AuditEntityType,
+)
+from gbm_ai.api.services.audit import record_audit_event
 from gbm_ai.api.storage.local import LocalObjectStore, StoredObject
 
 
@@ -18,12 +23,16 @@ def attach_study_source_object(
     storage: LocalObjectStore,
     study: Study,
     source: BinaryIO,
+    *,
+    request_id: str | None = None,
+    actor_type: AuditActorType = AuditActorType.DEMO_USER,
+    actor_id: str | None = None,
 ) -> StoredObject:
     """
     Internal service used by the future Phase 5 upload route.
 
-    It intentionally does NOT determine whether content is JPG/PNG/DICOM/NIfTI.
-    Format parsing and QC belong to Phase 5.
+    Storage + Study reference + AuditLog are handled as one logical operation.
+    File format detection/QC remains intentionally deferred to Phase 5.
     """
     if study.storage_key is not None:
         raise StudyStorageStateError(
@@ -38,11 +47,26 @@ def attach_study_source_object(
     study.status = StudyStatus.UPLOADED
 
     try:
+        record_audit_event(
+            db,
+            action=AuditAction.STUDY_SOURCE_STORED,
+            entity_type=AuditEntityType.STUDY,
+            entity_uuid=study.id,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            request_id=request_id,
+            technical_context={
+                "status": StudyStatus.UPLOADED.value,
+                "storage_backend": "local",
+                "size_bytes": stored.size_bytes,
+                "sha256": stored.sha256,
+            },
+            commit=False,
+        )
         db.commit()
         db.refresh(study)
     except Exception:
         db.rollback()
-        # Prevent orphaned filesystem object if DB update fails.
         if storage.exists(stored.storage_key):
             storage.delete(stored.storage_key)
         raise

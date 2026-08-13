@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "GBM Clinical Decision Support System API"
-    app_version: str = "0.4.4"
+    app_version: str = "0.5.1"
     api_v1_prefix: str = "/api/v1"
 
     environment: Literal["development", "test", "staging", "production"] = (
@@ -37,7 +37,6 @@ class Settings(BaseSettings):
     db_max_overflow: int = Field(default=5, ge=0, le=100)
     db_pool_timeout_seconds: int = Field(default=30, ge=1, le=300)
 
-    # Local development object storage. Never mount this as a public static path.
     storage_root: Path = Path("var/storage")
     storage_max_object_bytes: int = Field(
         default=5 * 1024 * 1024 * 1024,
@@ -47,6 +46,27 @@ class Settings(BaseSettings):
         default=1024 * 1024,
         ge=64 * 1024,
         le=16 * 1024 * 1024,
+    )
+
+    # Phase 5 upload boundary. Multipart overhead means the request ceiling is
+    # intentionally a little larger than the maximum stored object.
+    upload_max_request_bytes: int = Field(
+        default=5 * 1024 * 1024 * 1024 + 64 * 1024 * 1024,
+        ge=1024,
+    )
+    upload_max_archive_entries: int = Field(default=5000, ge=1, le=100000)
+    upload_max_archive_uncompressed_bytes: int = Field(
+        default=10 * 1024 * 1024 * 1024,
+        ge=1024,
+    )
+    upload_max_archive_single_entry_bytes: int = Field(
+        default=5 * 1024 * 1024 * 1024,
+        ge=1024,
+    )
+    upload_max_archive_compression_ratio: float = Field(
+        default=200.0,
+        ge=1.0,
+        le=10000.0,
     )
 
     @field_validator("api_v1_prefix")
@@ -83,6 +103,8 @@ class Settings(BaseSettings):
             "db_max_overflow": self.db_max_overflow,
             "storage_root": str(self.storage_root),
             "storage_max_object_bytes": self.storage_max_object_bytes,
+            "upload_max_request_bytes": self.upload_max_request_bytes,
+            "upload_max_archive_entries": self.upload_max_archive_entries,
         }
 
 
