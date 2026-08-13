@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from fastapi import Request
+from collections.abc import Generator
+
+from fastapi import Depends, Request
+from sqlalchemy.orm import Session
 
 from gbm_ai.api.config import Settings
 from gbm_ai.api.db import DatabaseManager
@@ -12,3 +15,9 @@ def get_app_settings(request: Request) -> Settings:
 
 def get_database(request: Request) -> DatabaseManager:
     return request.app.state.database
+
+
+def get_db_session(
+    database: DatabaseManager = Depends(get_database),
+) -> Generator[Session, None, None]:
+    yield from database.session()

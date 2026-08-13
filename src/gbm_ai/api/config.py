@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr, field_validator
@@ -19,7 +20,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "GBM Clinical Decision Support System API"
-    app_version: str = "0.4.1"
+    app_version: str = "0.4.4"
     api_v1_prefix: str = "/api/v1"
 
     environment: Literal["development", "test", "staging", "production"] = (
@@ -35,6 +36,18 @@ class Settings(BaseSettings):
     db_pool_size: int = Field(default=5, ge=1, le=50)
     db_max_overflow: int = Field(default=5, ge=0, le=100)
     db_pool_timeout_seconds: int = Field(default=30, ge=1, le=300)
+
+    # Local development object storage. Never mount this as a public static path.
+    storage_root: Path = Path("var/storage")
+    storage_max_object_bytes: int = Field(
+        default=5 * 1024 * 1024 * 1024,
+        ge=1024,
+    )
+    storage_chunk_bytes: int = Field(
+        default=1024 * 1024,
+        ge=64 * 1024,
+        le=16 * 1024 * 1024,
+    )
 
     @field_validator("api_v1_prefix")
     @classmethod
@@ -52,8 +65,11 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.environment == "production"
 
+    @property
+    def storage_root_resolved(self) -> Path:
+        return self.storage_root.expanduser().resolve()
+
     def safe_summary(self) -> dict[str, object]:
-        """Return non-secret settings safe for diagnostics/logging."""
         return {
             "app_name": self.app_name,
             "app_version": self.app_version,
@@ -65,6 +81,8 @@ class Settings(BaseSettings):
             "database_driver": self.database_url_value.split("://", 1)[0],
             "db_pool_size": self.db_pool_size,
             "db_max_overflow": self.db_max_overflow,
+            "storage_root": str(self.storage_root),
+            "storage_max_object_bytes": self.storage_max_object_bytes,
         }
 
 

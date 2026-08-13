@@ -1,89 +1,105 @@
-# ============================================================
-# AI-Based Clinical Decision Support System for Early
-# Identification of Glioblastoma Multiforme
-# ============================================================
+# ============================================================================
+# GBM CDSS — repository hygiene
+# Keep source code, migrations, configs/examples, tests, README files,
+# metric summaries and lightweight plots. Do NOT commit patient/MRI data,
+# local storage, secrets, databases, model weights or runtime caches.
+# ============================================================================
 
-# -------------------------
 # Python
-# -------------------------
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .coverage
-.coverage.*
+coverage.xml
 htmlcov/
-.tox/
-.nox/
+*.egg-info/
+build/
+dist/
 
-# -------------------------
 # Virtual environments
-# -------------------------
 .venv/
 venv/
 env/
 ENV/
 
-# -------------------------
-# Environment / secrets
-# -------------------------
+# Secrets / local configuration
 .env
 .env.*
 !.env.example
 *.pem
 *.key
+*.crt
+*.p12
+*.pfx
 
-# -------------------------
-# IDE / editor
-# -------------------------
+# IDE / OS
 .vscode/
 .idea/
-*.code-workspace
-
-# -------------------------
-# OS files
-# -------------------------
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# -------------------------
-# Logs / temporary files
-# -------------------------
+# Logs / runtime
 *.log
-*.tmp
-*.temp
-*.bak
-*.swp
-*.swo
-~$*
+logs/
+tmp/
+temp/
+*.pid
 
-# -------------------------
-# LOCAL MEDICAL / DATASET DATA
-# Never commit MRI, DICOM, NIfTI, patient data, derived images,
-# local manifests, dataset releases, or source archives.
-# -------------------------
+# Local PostgreSQL / SQLite / DB dumps
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+*.dump
+*.backup
+pgdata/
+postgres-data/
+
+# ---------------------------------------------------------------------------
+# PROJECT DATA — never push supplied/raw/interim/processed MRI datasets
+# ---------------------------------------------------------------------------
 /data/
 
-# Medical imaging formats anywhere in the repository
+# Common medical image formats anywhere outside intentionally versioned fixtures
 *.dcm
 *.dicom
+*.ima
 *.nii
 *.nii.gz
+*.nrrd
+*.mha
+*.mhd
 
-# Dataset/archive files
-*.rar
+# Uploaded archives / raw study packages
+*.zip
 *.7z
+*.rar
 *.tar
 *.tar.gz
+*.tgz
 
-# -------------------------
-# MODEL WEIGHTS / CHECKPOINTS
-# Keep code + lightweight metrics in Git; keep trained weights out.
-# -------------------------
+# ---------------------------------------------------------------------------
+# PROTECTED LOCAL OBJECT STORAGE — NEVER PUSH
+# ---------------------------------------------------------------------------
+/var/storage/
+/var/uploads/
+/storage/
+/uploads/
+/object-storage/
+
+# Any working copies/de-identified study files generated at runtime
+/work/
+/working/
+/derived/
+/deidentified/
+
+# ---------------------------------------------------------------------------
+# MODEL WEIGHTS / LARGE MODEL EXPORTS — NEVER PUSH
+# ---------------------------------------------------------------------------
 *.pt
 *.pth
 *.ckpt
@@ -91,47 +107,55 @@ desktop.ini
 *.onnx
 *.h5
 *.keras
+*.tflite
 *.joblib
+*.pkl
 
-# Explicit training checkpoint locations
+# Explicit checkpoint trees
 /artifacts/experiments/**/checkpoints/
-/checkpoints/
-/models/weights/
+/artifacts/baseline_experiments/**/checkpoints/
+/artifacts/**/checkpoints/
 
-# -------------------------
-# Experiment trackers / caches
-# -------------------------
-wandb/
-runs/
-lightning_logs/
-mlruns/
-.tensorboard/
-tensorboard/
+# Large/generated Grad-CAM or review image exports
+/artifacts/safety/gradcam_false_negative_review/images/
+/artifacts/**/review_images/
+/artifacts/**/images/
 
-# -------------------------
-# Local databases / storage
-# -------------------------
-*.db
-*.sqlite
-*.sqlite3
-/storage/
-/uploads/
+# Generated masks / volumetric outputs later in the roadmap
+/artifacts/**/masks/
+/artifacts/**/segmentations/
+/artifacts/**/volumes/
 
-# -------------------------
-# Build / packaging
-# -------------------------
-build/
-dist/
-*.egg-info/
-.eggs/
+# Generated reports containing case-level information later
+/artifacts/**/reports/
+/reports/
 
-# -------------------------
-# Jupyter
-# -------------------------
+# Local notebook scratch
 .ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
 
-# -------------------------
-# Optional local profiling / debug outputs
-# -------------------------
-profiles/
-debug_outputs/
+# Torch / Hugging Face / MONAI caches
+.torch/
+torch_cache/
+.cache/
+huggingface/
+monai_cache/
+
+# Optional profiling / temporary training outputs
+*.prof
+*.trace
+*.tmp
+*.part
+
+# ============================================================================
+# INTENTIONALLY COMMITTED:
+# - src/
+# - tests/
+# - migrations/
+# - alembic.ini
+# - requirements.txt
+# - .env.example
+# - README*.md
+# - lightweight artifacts/*.json, *.csv, *.png summaries/plots where useful
+# - model cards / safety policies / metric summaries
+# ============================================================================

@@ -6,6 +6,8 @@ from fastapi import FastAPI
 
 from gbm_ai.api.config import Settings, get_settings
 from gbm_ai.api.db import DatabaseManager
+from gbm_ai.api.routers.analysis import router as analysis_router
+from gbm_ai.api.routers.clinical import router as clinical_router
 from gbm_ai.api.routers.system import router as system_router
 
 
@@ -35,10 +37,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ),
     )
 
-    app.include_router(
-        system_router,
-        prefix=resolved_settings.api_v1_prefix,
-    )
+    prefix = resolved_settings.api_v1_prefix
+    app.include_router(system_router, prefix=prefix)
+    app.include_router(clinical_router, prefix=prefix)
+    app.include_router(analysis_router, prefix=prefix)
     return app
 
 
