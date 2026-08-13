@@ -1,0 +1,6 @@
+PHASE 3 TECHNICAL COMPLETE — MEDICAL FALSE-NEGATIVE REVIEW PENDING
+OOF safety samples: 196
+Residual GBM-not-suspected cases: 2
+Medical false-negative review pending: 3
+Locked test used: NO
+Next phase allowed: YES — Phase 4 Backend Foundation

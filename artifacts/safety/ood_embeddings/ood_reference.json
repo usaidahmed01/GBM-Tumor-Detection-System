@@ -1,0 +1,10 @@
+{
+  "method": "OOF_internal_embedding_distance_reference",
+  "mahalanobis_q90": 4.671738308739522,
+  "mahalanobis_q95": 5.128745551481002,
+  "mahalanobis_q99": 5.721025569175298,
+  "cosine_knn_q90": 0.7114747035941522,
+  "cosine_knn_q95": 0.7256555752715674,
+  "cosine_knn_q99": 0.7650301541446897,
+  "important_limitation": "This is an internal distribution-distance reference derived from GBM/no-GBM OOF development data. Without a separate external OOD dataset, it is an OOD-likeness signal, not a validated OOD detector."
+}

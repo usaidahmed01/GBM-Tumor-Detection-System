@@ -1,0 +1,36 @@
+{
+  "phase": "Phase 3 Step 4",
+  "status": "COMPLETE",
+  "oof_samples": 196,
+  "locked_test_used": false,
+  "base_probability_state_counts": {
+    "GBM_NOT_SUSPECTED": 43,
+    "INDETERMINATE": 71,
+    "GBM_SUSPECTED": 82
+  },
+  "final_safety_state_counts": {
+    "INDETERMINATE": 107,
+    "GBM_NOT_SUSPECTED": 26,
+    "GBM_SUSPECTED": 63
+  },
+  "safety_override_count": 36,
+  "safety_reason_counts": {
+    "TTA_BAND_INSTABILITY": 66,
+    "PROBABILITY_MIDDLE_BAND": 71,
+    "OOD_LIKENESS": 4
+  },
+  "gbm_ground_truth": {
+    "total": 121,
+    "final_gbm_suspected": 61,
+    "final_indeterminate": 58,
+    "final_gbm_not_suspected": 2
+  },
+  "no_gbm_ground_truth": {
+    "total": 75,
+    "final_gbm_not_suspected": 24,
+    "final_indeterminate": 49,
+    "final_gbm_suspected": 2
+  },
+  "residual_safety_critical_false_negatives": 2,
+  "important_interpretation": "The safety layer is allowed to abstain. More indeterminate cases can be appropriate when uncertainty/OOD/QC signals indicate a determinate classifier output should not be trusted."
+}

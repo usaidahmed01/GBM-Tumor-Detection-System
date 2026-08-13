@@ -1,0 +1,46 @@
+{
+  "phase": "Phase 3 Step 5",
+  "status": "PHASE 3 TECHNICAL COMPLETE \u2014 MEDICAL FALSE-NEGATIVE REVIEW PENDING",
+  "locked_test_used": false,
+  "required_artifacts_present": true,
+  "oof_safety_rows": 196,
+  "classifier_safety_metrics": {
+    "total_oof_samples": 196,
+    "gbm_samples": 121,
+    "no_gbm_samples": 75,
+    "base_state_counts": {
+      "GBM_NOT_SUSPECTED": 43,
+      "INDETERMINATE": 71,
+      "GBM_SUSPECTED": 82
+    },
+    "final_state_counts": {
+      "INDETERMINATE": 107,
+      "GBM_NOT_SUSPECTED": 26,
+      "GBM_SUSPECTED": 63
+    },
+    "determinate_coverage": 0.45408163265306123,
+    "abstention_indeterminate_rate": 0.5459183673469388,
+    "safety_override_count": 36,
+    "gbm_final_suspected": 61,
+    "gbm_final_indeterminate": 58,
+    "gbm_final_not_suspected": 2,
+    "no_gbm_final_not_suspected": 24,
+    "no_gbm_final_indeterminate": 49,
+    "no_gbm_final_suspected": 2,
+    "residual_safety_critical_false_negatives": 2,
+    "residual_false_positive_suspected_cases": 2
+  },
+  "false_negative_medical_review": {
+    "case_count": 3,
+    "status_counts": {
+      "PENDING": 3
+    },
+    "pending_count": 3,
+    "complete": false
+  },
+  "model_card_json": "artifacts\\safety\\model_card\\model_card_v1.json",
+  "model_card_markdown": "artifacts\\safety\\model_card\\MODEL_CARD.md",
+  "next_phase": "Phase 4 \u2014 Backend foundation",
+  "next_phase_allowed": true,
+  "important_note": "Backend foundation may proceed while medical review is pending, but Phase 3 must not be represented as fully clinically reviewed until those cases are completed."
+}

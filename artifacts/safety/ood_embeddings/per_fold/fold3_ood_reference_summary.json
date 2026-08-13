@@ -1,0 +1,12 @@
+{
+  "phase": "Phase 3 Step 3",
+  "fold": 3,
+  "train_embeddings": 156,
+  "validation_embeddings": 40,
+  "embedding_dimension_raw": 1280,
+  "pca_components": 32,
+  "pca_explained_variance_ratio_sum": 0.6221705675125122,
+  "knn_k": 5,
+  "locked_test_used": false,
+  "reference_fit_scope": "training portion of this CV fold only"
+}

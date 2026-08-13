@@ -1,0 +1,26 @@
+{
+  "name": "classifier_safety_fusion_v1",
+  "selected_architecture": "efficientnet_v2_s",
+  "probability_thresholds": {
+    "T_low": 0.13,
+    "T_high": 0.57
+  },
+  "base_probability_logic": {
+    "p <= 0.13": "GBM_NOT_SUSPECTED",
+    "0.13 < p < 0.57": "INDETERMINATE",
+    "p >= 0.57": "GBM_SUSPECTED"
+  },
+  "safety_downgrade_rules": [
+    "quality_status != PASS -> INDETERMINATE",
+    "ood_likeness_candidate == true -> INDETERMINATE",
+    "tta_band_instability == true -> INDETERMINATE",
+    "tta_uncertainty_candidate == true -> INDETERMINATE"
+  ],
+  "monotonic_safety_rule": "Safety signals may downgrade a determinate probability result to INDETERMINATE; they may never upgrade it to the opposite determinate class.",
+  "important_limitations": [
+    "OOD-likeness is internally referenced on development OOF embeddings and is not externally validated.",
+    "TTA uncertainty cutoffs are internal OOF engineering references, not clinical standards.",
+    "Current quality_status comes from the Phase 1 2D dataset audit, not final upload-time clinical QC.",
+    "The locked test set remains unused."
+  ]
+}

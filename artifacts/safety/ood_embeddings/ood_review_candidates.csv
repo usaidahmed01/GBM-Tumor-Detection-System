@@ -1,0 +1,5 @@
+sample_id,fold,target,mahalanobis_distance,cosine_knn_distance,mahalanobis_above_q95,knn_above_q95,mahalanobis_above_q99,knn_above_q99,ood_likeness_candidate
+yes_dcc31f03c9b97631,3,1,6.2137863209063156,0.4339402006835621,True,False,True,False,True
+yes_8401fd725d100f99,4,1,3.5203538671083394,0.852299105879133,False,True,False,True,True
+yes_b3c83703ca0184fa,4,1,3.7547890408740465,0.7659758949317732,False,True,False,True,True
+yes_f4a7b91418b53b36,4,1,5.795232362404658,0.6240698748165844,True,False,True,False,True

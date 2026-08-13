@@ -1,0 +1,249 @@
+{
+  "model_card_version": "1.0",
+  "generated_at_utc": "2026-08-13T20:36:58.842172+00:00",
+  "code_commit": "e437622c948617deee489ff63d7f31ced66afdfe",
+  "phase3_status": "PHASE 3 TECHNICAL COMPLETE \u2014 MEDICAL FALSE-NEGATIVE REVIEW PENDING",
+  "intended_use": "Academic/production-minded pre-biopsy 2D MRI decision-support assessment for the project-defined GBM versus no-GBM label, within the documented image domain and with clinician review.",
+  "not_intended_for": [
+    "Definitive pathological or molecular diagnosis.",
+    "Replacing radiologist interpretation or multidisciplinary review.",
+    "Classifying every alternative brain tumor type.",
+    "Treatment recommendation, drug selection, or survival prediction.",
+    "Physical tumor volume or validated anatomical localization from standalone 2D JPG/JPEG/PNG.",
+    "Clinical deployment without prospective/external validation and required governance/regulatory work."
+  ],
+  "model": {
+    "selected_architecture": "efficientnet_v2_s",
+    "architecture_selection_status": "SELECTED",
+    "fold_checkpoints": [
+      {
+        "fold": 0,
+        "relative_path": "artifacts\\experiments\\efficientnetv2s_fold0_seed42\\checkpoints\\best_model.pt",
+        "sha256": "e996bea99a7b1e2ca60e96fc8b5dc783afc0d6671325bb83486d458819f2520c",
+        "size_bytes": 81616287
+      },
+      {
+        "fold": 1,
+        "relative_path": "artifacts\\experiments\\efficientnetv2s_fold1_seed42\\checkpoints\\best_model.pt",
+        "sha256": "3ed6b41b22056898ef4c4c48daa5dd4368a9389ef4ed5d831573f027f9b62e08",
+        "size_bytes": 81616287
+      },
+      {
+        "fold": 2,
+        "relative_path": "artifacts\\experiments\\efficientnetv2s_fold2_seed42\\checkpoints\\best_model.pt",
+        "sha256": "1ab1059a0e1f5bbf00123c1059ffa81cdd876cf0e7f95b53183fd23d29a1d247",
+        "size_bytes": 81616287
+      },
+      {
+        "fold": 3,
+        "relative_path": "artifacts\\experiments\\efficientnetv2s_fold3_seed42\\checkpoints\\best_model.pt",
+        "sha256": "6c25e266adf89e0a1bee72dbbb0392a456e4ec1235969d8c9fce1d94c6aa5a91",
+        "size_bytes": 81616287
+      },
+      {
+        "fold": 4,
+        "relative_path": "artifacts\\experiments\\efficientnetv2s_fold4_seed42\\checkpoints\\best_model.pt",
+        "sha256": "9f4952120de8e202c2b795f41f7dc96999bec1046b6dee5e9b76eba59c81b106",
+        "size_bytes": 81616287
+      }
+    ],
+    "deployment_single_checkpoint_frozen": false,
+    "deployment_note": "Phases 2\u20133 evaluate five fold-specific OOF models. A single deployment-weight strategy has not yet been frozen."
+  },
+  "training_data": {
+    "dataset_release": "classification_v1.0",
+    "release_metadata": {
+      "release_name": "classification_v1.0",
+      "created_at_utc": "2026-08-11T16:49:49.529589+00:00",
+      "purpose": "Frozen Phase 1 classification dataset release for Phase 2 model development.",
+      "ground_truth_definition": {
+        "yes": "GBM (project-defined label)",
+        "no": "No GBM (project-defined label)"
+      },
+      "important_limitations": [
+        "Supplied 2D files do not independently verify pathology/molecular diagnosis.",
+        "Patient identifiers/grouping are unavailable, so patient-level separation cannot be guaranteed.",
+        "Near-duplicate/leakage groups are kept within a single outer split and a single CV fold.",
+        "The locked test set must not be used for training, hyperparameter selection, calibration, threshold selection, or early stopping."
+      ],
+      "summary": {
+        "total_samples": 228,
+        "development_samples": 196,
+        "test_samples": 32,
+        "class_distribution": {
+          "development": {
+            "yes": 121,
+            "no": 75
+          },
+          "test": {
+            "yes": 20,
+            "no": 12
+          }
+        },
+        "cv_fold_sizes": {
+          "0": 39,
+          "1": 39,
+          "2": 39,
+          "3": 40,
+          "4": 39
+        },
+        "outer_group_leakage": 0,
+        "cv_group_leakage": 0,
+        "all_quality_pass": true,
+        "all_standardized_files_present": true
+      },
+      "artifacts": {
+        "split_manifest": {
+          "path": "data\\manifests\\classification_split_manifest.csv",
+          "sha256": "ec3dde7a6970808715a07d130c7fd997bd9676f6b1ac0e2de1eeb8c52f298f12"
+        },
+        "quality_manifest": {
+          "path": "data\\manifests\\classification_quality_manifest.csv",
+          "sha256": "0dba0b8267d2f104407f760df120bae55f668ff36e7123aa90d8608ae5b00831"
+        },
+        "preprocessing_config": {
+          "path": "data\\reports\\phase1_step3_preprocessing_config.json",
+          "sha256": "61d81e4e6f701684156fc0556991ed6d2f8946f9e2c5c7bd2f363e47a76b60ab"
+        },
+        "split_config": {
+          "path": "data\\reports\\phase1_step4_split_config.json",
+          "sha256": "24d93b782657d21431431755ae75dc77b701c9cdde357c703aba6e969a45a1fb"
+        },
+        "split_report": {
+          "path": "data\\reports\\phase1_step4_split_report.json",
+          "sha256": "efdcfa3896119538fdf5fd3a9c555c9c9c73d5f8ffc75aa05b7ce1ade4178d27"
+        }
+      },
+      "frozen_manifest_sha256": "ec3dde7a6970808715a07d130c7fd997bd9676f6b1ac0e2de1eeb8c52f298f12"
+    },
+    "total_unique_samples": 228,
+    "gbm_samples": 141,
+    "no_gbm_samples": 87,
+    "development_samples": 196,
+    "locked_test_samples": 32,
+    "patient_level_split_guaranteed": false,
+    "provenance_limitation": "Project labels are accepted from the supplied dataset but are not independently pathology/molecularly verified in the image files."
+  },
+  "development_evaluation": {
+    "roc_auc": 0.933443526170799,
+    "pr_auc": 0.9528003725765215,
+    "roc_auc_ci_lower": 0.8938809400826447,
+    "roc_auc_ci_upper": 0.96575540346795,
+    "calibrated_roc_auc": 0.931900826446281,
+    "calibrated_pr_auc": 0.9513756490450131,
+    "raw_nll": 0.45092118741466247,
+    "calibrated_nll": 0.4334527799305365,
+    "raw_brier": 0.14418413282702866,
+    "calibrated_brier": 0.14116671725529176,
+    "raw_ece": 0.18577904719859364,
+    "calibrated_ece": 0.14994906011902864
+  },
+  "thresholds": {
+    "T_low": 0.13,
+    "T_high": 0.57,
+    "status": "ENGINEERING_FREEZE_CANDIDATE",
+    "clinical_review_required": true,
+    "selection_policy": {
+      "constraints": "T_low sensitivity >= 0.975; T_high specificity >= 0.950; T_low < T_high",
+      "pair_selection": "Choose the narrowest ordered indeterminate interval satisfying both constraints; ties prefer the higher T_low."
+    }
+  },
+  "classifier_safety_evaluation": {
+    "total_oof_samples": 196,
+    "gbm_samples": 121,
+    "no_gbm_samples": 75,
+    "base_state_counts": {
+      "GBM_NOT_SUSPECTED": 43,
+      "INDETERMINATE": 71,
+      "GBM_SUSPECTED": 82
+    },
+    "final_state_counts": {
+      "INDETERMINATE": 107,
+      "GBM_NOT_SUSPECTED": 26,
+      "GBM_SUSPECTED": 63
+    },
+    "determinate_coverage": 0.45408163265306123,
+    "abstention_indeterminate_rate": 0.5459183673469388,
+    "safety_override_count": 36,
+    "gbm_final_suspected": 61,
+    "gbm_final_indeterminate": 58,
+    "gbm_final_not_suspected": 2,
+    "no_gbm_final_not_suspected": 24,
+    "no_gbm_final_indeterminate": 49,
+    "no_gbm_final_suspected": 2,
+    "residual_safety_critical_false_negatives": 2,
+    "residual_false_positive_suspected_cases": 2
+  },
+  "safety_policy": {
+    "name": "classifier_safety_fusion_v1",
+    "selected_architecture": "efficientnet_v2_s",
+    "probability_thresholds": {
+      "T_low": 0.13,
+      "T_high": 0.57
+    },
+    "base_probability_logic": {
+      "p <= 0.13": "GBM_NOT_SUSPECTED",
+      "0.13 < p < 0.57": "INDETERMINATE",
+      "p >= 0.57": "GBM_SUSPECTED"
+    },
+    "safety_downgrade_rules": [
+      "quality_status != PASS -> INDETERMINATE",
+      "ood_likeness_candidate == true -> INDETERMINATE",
+      "tta_band_instability == true -> INDETERMINATE",
+      "tta_uncertainty_candidate == true -> INDETERMINATE"
+    ],
+    "monotonic_safety_rule": "Safety signals may downgrade a determinate probability result to INDETERMINATE; they may never upgrade it to the opposite determinate class.",
+    "important_limitations": [
+      "OOD-likeness is internally referenced on development OOF embeddings and is not externally validated.",
+      "TTA uncertainty cutoffs are internal OOF engineering references, not clinical standards.",
+      "Current quality_status comes from the Phase 1 2D dataset audit, not final upload-time clinical QC.",
+      "The locked test set remains unused."
+    ]
+  },
+  "false_negative_review": {
+    "case_count": 3,
+    "status_counts": {
+      "PENDING": 3
+    },
+    "pending_count": 3,
+    "complete": false
+  },
+  "ood": {
+    "validated_external_ood_detector": false,
+    "candidate_count": 4,
+    "method": "Fold-specific EfficientNetV2-S penultimate embeddings -> training-only StandardScaler/PCA/LedoitWolf Mahalanobis + cosine kNN distance"
+  },
+  "tta_uncertainty": {
+    "candidate_count": 66,
+    "band_instability_cases": 66,
+    "tta_variants": [
+      "identity",
+      "rotate_minus_3",
+      "rotate_plus_3",
+      "translate_left_2pct",
+      "translate_right_2pct",
+      "translate_up_2pct",
+      "translate_down_2pct"
+    ],
+    "threshold_status": "REFERENCE_ONLY_NOT_FINAL_SAFETY_GATE"
+  },
+  "failure_modes_and_limitations": [
+    "Small supplied 2D dataset; generalization to other hospitals, scanner vendors, protocols, MRI views or preprocessing is not established.",
+    "No patient identifiers are available, so patient-level split separation cannot be guaranteed.",
+    "No dedicated external OOD dataset is available; the current embedding-distance mechanism is an internal OOD-likeness signal.",
+    "TTA uncertainty references are internal development OOF engineering quantiles, not validated clinical thresholds.",
+    "Grad-CAM may highlight correlates or artifacts and is not a tumor boundary, physical measurement or validated anatomical localization.",
+    "Low GBM probability does not establish normal brain or absence of another intracranial abnormality.",
+    "Applying the 2D classifier to slices extracted from DICOM/NIfTI would introduce a separate domain/processing shift requiring validation.",
+    "Current Phase 1 quality status is not yet the final clinical upload-time DICOM/NIfTI/JPG QC implementation.",
+    "Five OOF fold checkpoints exist; a final single deployment checkpoint/ensemble strategy has not yet been frozen."
+  ],
+  "fairness_subgroups": "Meaningful age/sex/site/scanner subgroup evaluation is not supported by the supplied classification dataset because reliable linked subgroup metadata are unavailable.",
+  "licenses_dependencies": [
+    "PyTorch / TorchVision are used for the 2D classifier.",
+    "Selected classifier architecture uses TorchVision EfficientNetV2-S pretrained weights.",
+    "Third-party and dataset license/use terms must be independently verified before public/commercial distribution."
+  ],
+  "clinical_validation_statement": "This model and safety layer are an academic/production-minded prototype evaluated on internal development OOF data. They are not clinically validated, are not a medical-device approval claim, and must not be used as a substitute for qualified clinical interpretation.",
+  "phase3_gate_note": "Technical classifier-safety artifacts are complete. 3 safety-critical Grad-CAM false-negative review case(s) still require medical-collaborator review."
+}
