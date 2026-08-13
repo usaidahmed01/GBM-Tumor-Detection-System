@@ -1,0 +1,13 @@
+{
+  "phase": "Phase 3 Step 1",
+  "status": "GENERATED_FOR_MEDICAL_REVIEW",
+  "selected_architecture": "efficientnet_v2_s",
+  "dataset_release": "classification_v1.0",
+  "T_low": 0.13,
+  "T_high": 0.57,
+  "safety_critical_false_negative_count": 3,
+  "locked_test_used": false,
+  "gradcam_role": "Supporting 2D classifier visualization only. Not a tumor boundary, physical measurement, or validated anatomical localization.",
+  "review_requirement": "Review each case with the medical collaborator and record whether attention is plausibly intracranial/lesion-related, border/background-driven, diffuse/unclear, or otherwise suspicious.",
+  "methodology": "Each OOF case uses its own fold checkpoint, which did not train on that validation image."
+}

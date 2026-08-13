@@ -1,0 +1,51 @@
+{
+  "selection_policy": {
+    "constraints": "T_low sensitivity >= 0.975; T_high specificity >= 0.950; T_low < T_high",
+    "pair_selection": "Choose the narrowest ordered indeterminate interval satisfying both constraints; ties prefer the higher T_low."
+  },
+  "T_low": 0.13,
+  "T_high": 0.57,
+  "T_low_operating_point": {
+    "threshold": 0.13,
+    "sensitivity": 0.9752066115702479,
+    "specificity": 0.5333333333333333,
+    "tp": 118,
+    "tn": 40,
+    "fp": 35,
+    "fn": 3
+  },
+  "T_high_operating_point": {
+    "threshold": 0.57,
+    "sensitivity": 0.6528925619834711,
+    "specificity": 0.96,
+    "tp": 79,
+    "tn": 72,
+    "fp": 3,
+    "fn": 42
+  },
+  "three_band_development_behavior": {
+    "gbm_not_suspected_band": {
+      "total": 43,
+      "gbm": 3,
+      "no_gbm": 40,
+      "fraction_of_development": 0.2193877551020408,
+      "negative_predictive_value": 0.9302325581395349
+    },
+    "indeterminate_band": {
+      "total": 71,
+      "gbm": 39,
+      "no_gbm": 32,
+      "fraction_of_development": 0.3622448979591837
+    },
+    "gbm_suspected_band": {
+      "total": 82,
+      "gbm": 79,
+      "no_gbm": 3,
+      "fraction_of_development": 0.41836734693877553,
+      "positive_predictive_value": 0.9634146341463414
+    }
+  },
+  "locked_test_used": false,
+  "status": "ENGINEERING_FREEZE_CANDIDATE",
+  "clinical_review_required": true
+}

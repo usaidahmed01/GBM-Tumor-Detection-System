@@ -1,0 +1,6 @@
+PHASE 2 READY FOR CLASSIFIER SAFETY
+Selected architecture: efficientnet_v2_s
+OOF samples: 196
+T_low candidate: 0.13
+T_high candidate: 0.57
+Locked test used: NO

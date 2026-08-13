@@ -1,0 +1,13 @@
+{
+  "method": "development_OOF_quantile_reference",
+  "probability_std_q90": 0.11101909899054038,
+  "probability_std_q95": 0.1486146383444431,
+  "probability_std_q99": 0.2204389876788935,
+  "probability_range_q90": 0.3354469281563539,
+  "probability_range_q95": 0.4378398982023751,
+  "probability_range_q99": 0.5836455673365684,
+  "predictive_entropy_q90": 0.6633225682643837,
+  "predictive_entropy_q95": 0.6824699559459553,
+  "predictive_entropy_q99": 0.6920865599431179,
+  "important_note": "These are engineering reference quantiles from OOF development data, not clinically validated uncertainty thresholds."
+}

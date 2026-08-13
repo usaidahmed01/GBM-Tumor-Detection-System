@@ -1,0 +1,40 @@
+{
+  "phase": "Phase 3 Step 2",
+  "status": "COMPLETE",
+  "folds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "oof_samples": 196,
+  "tta_variants": [
+    "identity",
+    "rotate_minus_3",
+    "rotate_plus_3",
+    "translate_left_2pct",
+    "translate_right_2pct",
+    "translate_up_2pct",
+    "translate_down_2pct"
+  ],
+  "tta_count_per_sample": 7,
+  "locked_test_used": false,
+  "reference_quantiles": {
+    "method": "development_OOF_quantile_reference",
+    "probability_std_q90": 0.11101909899054038,
+    "probability_std_q95": 0.1486146383444431,
+    "probability_std_q99": 0.2204389876788935,
+    "probability_range_q90": 0.3354469281563539,
+    "probability_range_q95": 0.4378398982023751,
+    "probability_range_q99": 0.5836455673365684,
+    "predictive_entropy_q90": 0.6633225682643837,
+    "predictive_entropy_q95": 0.6824699559459553,
+    "predictive_entropy_q99": 0.6920865599431179,
+    "important_note": "These are engineering reference quantiles from OOF development data, not clinically validated uncertainty thresholds."
+  },
+  "band_instability_cases": 66,
+  "engineering_uncertainty_candidate_cases": 66,
+  "threshold_status": "REFERENCE_ONLY_NOT_FINAL_SAFETY_GATE",
+  "important_note": "Phase 3 Step 4 will combine uncertainty with calibrated probability, OOD and QC. This step does not independently force a clinical state."
+}
