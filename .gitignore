@@ -159,3 +159,5 @@ monai_cache/
 # - lightweight artifacts/*.json, *.csv, *.png summaries/plots where useful
 # - model cards / safety policies / metric summaries
 # ============================================================================
+
+/var/model_bundles/

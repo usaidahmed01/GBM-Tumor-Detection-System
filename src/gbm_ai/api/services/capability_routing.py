@@ -24,6 +24,7 @@ from gbm_ai.api.models.audit import (
 )
 from gbm_ai.api.models.clinical import Assessment, Patient, ScopeStatus
 from gbm_ai.api.services.audit import record_audit_event
+from gbm_ai.api.services.segmentation_state import invalidate_segmentation_preparation
 
 
 REQUIRED_3D_SEQUENCES = ("T1", "T1C", "T2", "FLAIR")
@@ -698,6 +699,8 @@ def confirm_brain_scope(
             "brain-scope confirmation cannot override failed MRI QC"
         )
 
+    invalidate_segmentation_preparation(study)
+
     study.brain_scope_status = (
         BrainScopeStatus.CLINICIAN_CONFIRMED
         if is_brain_mri
@@ -800,6 +803,7 @@ def confirm_nifti_sequence_mapping(
                 f"{label} volume has invalid spatial metadata"
             )
 
+    invalidate_segmentation_preparation(study)
     study.nifti_sequence_mapping = normalized
     study.capability_routing_status = CapabilityRoutingStatus.PENDING
     study.capability_summary = {

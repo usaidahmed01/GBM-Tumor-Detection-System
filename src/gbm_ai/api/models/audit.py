@@ -27,6 +27,7 @@ class AuditAction(str, enum.Enum):
     STUDY_SCOPE_CONFIRMED = "study_scope_confirmed"
     NIFTI_SEQUENCE_MAPPED = "nifti_sequence_mapped"
     STUDY_CAPABILITY_ROUTED = "study_capability_routed"
+    SEGMENTATION_PREPARATION_COMPLETED = "segmentation_preparation_completed"
     ANALYSIS_CREATED = "analysis_created"
     ANALYSIS_STARTED = "analysis_started"
     ANALYSIS_COMPLETED = "analysis_completed"

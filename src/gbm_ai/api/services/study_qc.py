@@ -29,6 +29,7 @@ from gbm_ai.api.qc.validators import (
     sample_dicom_pixel_quality,
 )
 from gbm_ai.api.services.audit import record_audit_event
+from gbm_ai.api.services.segmentation_state import invalidate_segmentation_preparation
 from gbm_ai.api.storage.local import LocalObjectStore
 
 
@@ -252,6 +253,8 @@ def run_study_qc(
             "study format must be detected before MRI QC"
         )
 
+    invalidate_segmentation_preparation(study)
+
     if study.source_format == SourceFormat.DICOM:
         result = _run_dicom_qc(db, storage, study)
     elif study.source_format == SourceFormat.IMAGE:
@@ -358,6 +361,7 @@ def confirm_series_sequence(
 
     study = db.get(Study, series.study_id)
     if study is not None:
+        invalidate_segmentation_preparation(study)
         prior_summary = dict(study.qc_summary or {})
         prior_summary["stale"] = True
         prior_summary["stale_reason"] = "series_sequence_confirmation_changed"

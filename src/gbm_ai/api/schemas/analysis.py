@@ -13,6 +13,7 @@ from gbm_ai.api.models.analysis import (
     DeidentificationStatus,
     ModelRole,
     QCState,
+    SegmentationPreparationStatus,
     SourceFormat,
     StudyQCStatus,
     StudyStatus,
@@ -41,6 +42,7 @@ class StudyRead(BaseModel):
     nifti_sequence_mapping: dict
     capability_routing_status: CapabilityRoutingStatus
     capability_summary: dict
+    segmentation_preparation_status: SegmentationPreparationStatus
     status: StudyStatus
     created_at: datetime
     updated_at: datetime

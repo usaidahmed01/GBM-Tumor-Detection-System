@@ -48,6 +48,10 @@ class Settings(BaseSettings):
         le=16 * 1024 * 1024,
     )
 
+    # Phase 6 frozen MONAI model bundle cache. This path contains downloaded
+    # model weights/configs and must stay outside source control.
+    segmentation_bundle_root: Path = Path("var/model_bundles")
+
     # Phase 5 upload boundary. Multipart overhead means the request ceiling is
     # intentionally a little larger than the maximum stored object.
     upload_max_request_bytes: int = Field(
@@ -89,6 +93,10 @@ class Settings(BaseSettings):
     def storage_root_resolved(self) -> Path:
         return self.storage_root.expanduser().resolve()
 
+    @property
+    def segmentation_bundle_root_resolved(self) -> Path:
+        return self.segmentation_bundle_root.expanduser().resolve()
+
     def safe_summary(self) -> dict[str, object]:
         return {
             "app_name": self.app_name,
@@ -102,6 +110,7 @@ class Settings(BaseSettings):
             "db_pool_size": self.db_pool_size,
             "db_max_overflow": self.db_max_overflow,
             "storage_root": str(self.storage_root),
+            "segmentation_bundle_root": str(self.segmentation_bundle_root),
             "storage_max_object_bytes": self.storage_max_object_bytes,
             "upload_max_request_bytes": self.upload_max_request_bytes,
             "upload_max_archive_entries": self.upload_max_archive_entries,

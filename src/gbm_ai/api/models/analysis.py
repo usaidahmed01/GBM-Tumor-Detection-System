@@ -65,6 +65,13 @@ class CapabilityRoutingStatus(str, enum.Enum):
     NO_SUPPORTED_ANALYSIS = "no_supported_analysis"
 
 
+class SegmentationPreparationStatus(str, enum.Enum):
+    PENDING = "pending"
+    READY = "ready"
+    REGISTRATION_REQUIRED = "registration_required"
+    FAILED = "failed"
+
+
 class ModelRole(str, enum.Enum):
     CLASSIFIER = "classifier"
     SEGMENTATION = "segmentation"
@@ -206,6 +213,22 @@ class Study(TimestampMixin, Base):
         default=CapabilityRoutingStatus.PENDING,
     )
     capability_summary: Mapped[dict] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+
+    segmentation_preparation_status: Mapped[SegmentationPreparationStatus] = mapped_column(
+        Enum(
+            SegmentationPreparationStatus,
+            name="study_segmentation_preparation_status",
+            native_enum=False,
+            validate_strings=True,
+        ),
+        nullable=False,
+        default=SegmentationPreparationStatus.PENDING,
+    )
+    segmentation_preparation_summary: Mapped[dict] = mapped_column(
         JSON,
         nullable=False,
         default=dict,
