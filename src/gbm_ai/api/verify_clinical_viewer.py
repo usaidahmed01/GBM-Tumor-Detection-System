@@ -11,11 +11,16 @@ from gbm_ai.api.services.clinical_viewer import (
 
 def main() -> None:
     app = create_app()
-    paths = {route.path for route in app.routes}
+    # FastAPI 0.137+ keeps included APIRouters as lazy _IncludedRouter
+    # nodes. Those nodes intentionally do not expose ``.path``. OpenAPI is
+    # the stable public representation of the fully expanded route tree.
+    openapi_paths = app.openapi().get("paths", {})
     manifest_path = "/api/v1/studies/{study_uuid}/viewer/manifest"
     asset_path = "/api/v1/studies/{study_uuid}/viewer/assets/{asset_alias}"
-    if manifest_path not in paths or asset_path not in paths:
+    if manifest_path not in openapi_paths or asset_path not in openapi_paths:
         raise RuntimeError("Phase 8 viewer routes are not registered")
+    if "get" not in openapi_paths[manifest_path] or "get" not in openapi_paths[asset_path]:
+        raise RuntimeError("Phase 8 viewer GET operations are not registered")
     if VIEWER_MODEL_SEQUENCES != ("T1C", "T1", "T2", "FLAIR"):
         raise RuntimeError("viewer MRI channel contract drifted")
     if VIEWER_PLANES != ("axial", "coronal", "sagittal"):

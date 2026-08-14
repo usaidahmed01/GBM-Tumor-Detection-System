@@ -31,6 +31,7 @@ class ViewerAssetResponse(BaseModel):
     sequence: Literal["T1C", "T1", "T2", "FLAIR"] | None = None
     region: Literal["WT", "TC", "ET", "BRATS_LABELMAP"] | None = None
     download_url: str
+    loader_url: str
 
 
 class ViewerRegionMeasurementResponse(BaseModel):
@@ -64,6 +65,7 @@ class ViewerLocalizationSummaryResponse(BaseModel):
 
 class ClinicalViewerManifestResponse(BaseModel):
     version: Literal["phase8_step1_clinical_viewer_backend_v1"]
+    ui_version: Literal["phase8_step2_cornerstone3d_readonly_ui_v1"]
     status: Literal["ready"]
     study_uuid: uuid.UUID
     source_format: Literal["dicom", "nifti"]
@@ -81,9 +83,9 @@ class ClinicalViewerManifestResponse(BaseModel):
     checksum_validation_required_before_streaming: Literal[True] = True
     overlays_available: Literal[True] = True
     three_dimensional_asset_basis_ready: Literal[True] = True
-    cornerstone_or_ohif_frontend_implemented: Literal[False] = False
+    cornerstone_or_ohif_frontend_implemented: Literal[True] = True
     manual_mask_editing_implemented: Literal[False] = False
     clinician_verification_required: Literal[True] = True
     segmentation_is_gbm_diagnosis: Literal[False] = False
     clinical_validation_claimed: Literal[False] = False
-    next_step: Literal["phase8_step2_clinical_viewer_ui"]
+    next_step: Literal["phase8_step3_clinician_mask_review_and_correction"]

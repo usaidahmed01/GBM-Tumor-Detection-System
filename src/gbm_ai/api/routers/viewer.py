@@ -14,6 +14,7 @@ from gbm_ai.api.services.analysis_records import StudyNotFoundError, get_study
 from gbm_ai.api.services.audit import record_audit_event
 from gbm_ai.api.services.clinical_viewer import (
     ClinicalViewerServiceError,
+    ViewerAsset,
     build_clinical_viewer_manifest,
     open_verified_viewer_asset,
     resolve_viewer_asset,
@@ -70,27 +71,15 @@ def clinical_viewer_manifest(
         )
 
 
-@router.get(
-    "/studies/{study_uuid}/viewer/assets/{asset_alias}",
-    summary=(
-        "Stream one approved clinical-viewer asset after server-side "
-        "checksum verification without exposing an object-storage path"
-    ),
-)
-def clinical_viewer_asset(
-    study_uuid: uuid.UUID,
-    asset_alias: str,
+def _stream_asset_response(
+    *,
+    asset: ViewerAsset,
+    study,
     request: Request,
-    db: Session = Depends(get_db_session),
-    storage: LocalObjectStore = Depends(get_object_store),
-):
+    db: Session,
+    storage: LocalObjectStore,
+) -> StreamingResponse:
     try:
-        study = get_study(db, study_uuid)
-    except StudyNotFoundError:
-        raise HTTPException(status_code=404, detail="study not found")
-
-    try:
-        asset = resolve_viewer_asset(db, study, asset_alias=asset_alias)
         opened = open_verified_viewer_asset(storage, asset)
         record_audit_event(
             db,
@@ -132,4 +121,87 @@ def clinical_viewer_asset(
             "Cache-Control": "private, no-store",
             "X-Content-Type-Options": "nosniff",
         },
+    )
+
+
+def _resolve_study_asset(
+    *,
+    study_uuid: uuid.UUID,
+    asset_alias: str,
+    db: Session,
+):
+    try:
+        study = get_study(db, study_uuid)
+    except StudyNotFoundError:
+        raise HTTPException(status_code=404, detail="study not found")
+
+    try:
+        asset = resolve_viewer_asset(db, study, asset_alias=asset_alias)
+    except ClinicalViewerServiceError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": exc.code, "message": str(exc)},
+        )
+    return study, asset
+
+
+@router.get(
+    "/studies/{study_uuid}/viewer/assets/{asset_alias}",
+    summary=(
+        "Stream one approved clinical-viewer asset after server-side "
+        "checksum verification without exposing an object-storage path"
+    ),
+)
+def clinical_viewer_asset(
+    study_uuid: uuid.UUID,
+    asset_alias: str,
+    request: Request,
+    db: Session = Depends(get_db_session),
+    storage: LocalObjectStore = Depends(get_object_store),
+):
+    study, asset = _resolve_study_asset(
+        study_uuid=study_uuid,
+        asset_alias=asset_alias,
+        db=db,
+    )
+    return _stream_asset_response(
+        asset=asset,
+        study=study,
+        request=request,
+        db=db,
+        storage=storage,
+    )
+
+
+@router.get(
+    "/studies/{study_uuid}/viewer/assets/{asset_alias}/{filename}",
+    summary=(
+        "Stream an approved viewer asset through a loader-safe filename URL; "
+        "the filename must exactly match the server-generated manifest"
+    ),
+)
+def clinical_viewer_asset_with_filename(
+    study_uuid: uuid.UUID,
+    asset_alias: str,
+    filename: str,
+    request: Request,
+    db: Session = Depends(get_db_session),
+    storage: LocalObjectStore = Depends(get_object_store),
+):
+    study, asset = _resolve_study_asset(
+        study_uuid=study_uuid,
+        asset_alias=asset_alias,
+        db=db,
+    )
+    if filename != asset.filename:
+        raise HTTPException(
+            status_code=404,
+            detail="viewer asset filename does not match the approved manifest",
+        )
+    return _stream_asset_response(
+        asset=asset,
+        study=study,
+        request=request,
+        db=db,
+        storage=storage,
     )

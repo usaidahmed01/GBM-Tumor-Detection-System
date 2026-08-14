@@ -61,9 +61,16 @@ def _segmentation(review_status="unreviewed"):
 def test_phase8_viewer_contract_routes_are_registered_without_frontend_claim():
     assert CLINICAL_VIEWER_BACKEND_VERSION == "phase8_step1_clinical_viewer_backend_v1"
     app = create_app()
-    paths = {route.path for route in app.routes}
-    assert "/api/v1/studies/{study_uuid}/viewer/manifest" in paths
-    assert "/api/v1/studies/{study_uuid}/viewer/assets/{asset_alias}" in paths
+    # FastAPI 0.137+ uses lazy _IncludedRouter nodes in app.routes, so
+    # verify the fully expanded public route contract through OpenAPI rather
+    # than depending on FastAPI's private route-tree representation.
+    openapi_paths = app.openapi()["paths"]
+    manifest_path = "/api/v1/studies/{study_uuid}/viewer/manifest"
+    asset_path = "/api/v1/studies/{study_uuid}/viewer/assets/{asset_alias}"
+    assert manifest_path in openapi_paths
+    assert asset_path in openapi_paths
+    assert "get" in openapi_paths[manifest_path]
+    assert "get" in openapi_paths[asset_path]
 
 
 def test_viewer_asset_catalog_contains_four_mri_volumes_and_four_overlays_without_raw_keys_in_public_payload():
@@ -91,6 +98,8 @@ def test_viewer_asset_catalog_contains_four_mri_volumes_and_four_overlays_withou
     )
     assert "storage_key" not in public
     assert public["download_url"].endswith("/viewer/assets/mask_wt")
+    assert public["loader_url"].endswith("/viewer/assets/mask_wt/wt_mask.nii.gz")
+    assert "storage_key" not in public["loader_url"]
     assert public["coordinate_space"] == "patient_model_space_ras"
 
 

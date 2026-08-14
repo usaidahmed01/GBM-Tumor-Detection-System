@@ -15,6 +15,7 @@ from gbm_ai.api.storage.local import LocalObjectStore
 
 
 CLINICAL_VIEWER_BACKEND_VERSION = "phase8_step1_clinical_viewer_backend_v1"
+CLINICAL_VIEWER_UI_VERSION = "phase8_step2_cornerstone3d_readonly_ui_v1"
 VIEWER_PRIMARY_REFERENCE_SEQUENCE = "T1C"
 VIEWER_PLANES = ("axial", "coronal", "sagittal")
 VIEWER_MODEL_SEQUENCES = ("T1C", "T1", "T2", "FLAIR")
@@ -53,6 +54,9 @@ class ViewerAsset:
             "sequence": self.sequence,
             "region": self.region,
             "download_url": f"{prefix}/studies/{study_uuid}/viewer/assets/{self.alias}",
+            "loader_url": (
+                f"{prefix}/studies/{study_uuid}/viewer/assets/{self.alias}/{self.filename}"
+            ),
         }
 
 
@@ -351,6 +355,7 @@ def build_clinical_viewer_manifest(
 
     return {
         "version": CLINICAL_VIEWER_BACKEND_VERSION,
+        "ui_version": CLINICAL_VIEWER_UI_VERSION,
         "status": "ready",
         "study_uuid": study.id,
         "source_format": study.source_format.value,
@@ -371,12 +376,12 @@ def build_clinical_viewer_manifest(
         "checksum_validation_required_before_streaming": True,
         "overlays_available": True,
         "three_dimensional_asset_basis_ready": True,
-        "cornerstone_or_ohif_frontend_implemented": False,
+        "cornerstone_or_ohif_frontend_implemented": True,
         "manual_mask_editing_implemented": False,
         "clinician_verification_required": True,
         "segmentation_is_gbm_diagnosis": False,
         "clinical_validation_claimed": False,
-        "next_step": "phase8_step2_clinical_viewer_ui",
+        "next_step": "phase8_step3_clinician_mask_review_and_correction",
     }
 
 
