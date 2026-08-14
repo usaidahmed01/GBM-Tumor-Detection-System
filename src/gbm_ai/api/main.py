@@ -15,6 +15,9 @@ from gbm_ai.api.routers.dicom import router as dicom_router
 from gbm_ai.api.routers.system import router as system_router
 from gbm_ai.api.routers.qc import router as qc_router
 from gbm_ai.api.routers.uploads import router as uploads_router
+from gbm_ai.api.routers.segmentation import (
+    router as segmentation_router,
+)
 from gbm_ai.api.storage.local import LocalObjectStore
 
 
@@ -64,6 +67,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(dicom_router, prefix=prefix)
     app.include_router(qc_router, prefix=prefix)
     app.include_router(capabilities_router, prefix=prefix)
+    app.include_router(segmentation_router, prefix=prefix)
     return app
 
 
