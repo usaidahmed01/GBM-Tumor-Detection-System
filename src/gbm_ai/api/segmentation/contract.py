@@ -53,8 +53,8 @@ SEGMENTATION_MODEL_CONTRACT: Final = SegmentationModelContract(
     requires_orientation_normalization=True,
     requires_alignment_validation=True,
     requires_reference_geometry_resampling=True,
-    runtime_model_loading_implemented=False,
-    inference_implemented=False,
+    runtime_model_loading_implemented=True,
+    inference_implemented=True,
     clinical_validation_claimed=False,
 )
 

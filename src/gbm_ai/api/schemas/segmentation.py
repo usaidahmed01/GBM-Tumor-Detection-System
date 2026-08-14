@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -30,8 +31,8 @@ class SegmentationModelContractResponse(BaseModel):
     requires_orientation_normalization: Literal[True] = True
     requires_alignment_validation: Literal[True] = True
     requires_reference_geometry_resampling: Literal[True] = True
-    runtime_model_loading_implemented: Literal[False] = False
-    inference_implemented: Literal[False] = False
+    runtime_model_loading_implemented: Literal[True] = True
+    inference_implemented: Literal[True] = True
     clinical_validation_claimed: Literal[False] = False
 
 
@@ -114,8 +115,8 @@ class SegmentationPreparationResponse(BaseModel):
     reference_spacing_target_mm: list[float] | None = None
     registration_performed: bool = False
     reference_geometry_resampling_performed: bool = False
-    model_execution_started: Literal[False] = False
-    segmentation_generated: Literal[False] = False
+    model_execution_started: bool = False
+    segmentation_generated: bool = False
     physical_volume_generated: Literal[False] = False
     anatomical_localization_generated: Literal[False] = False
     clinical_validation_claimed: Literal[False] = False
@@ -223,3 +224,73 @@ class SegmentationModelInputResponse(BaseModel):
     anatomical_localization_generated: Literal[False] = False
     clinical_validation_claimed: Literal[False] = False
     next_step: str | None = None
+
+
+class SegmentationMaskArtifactResponse(BaseModel):
+    storage_key: str
+    checksum_sha256: str
+    size_bytes: int
+    foreground_voxels: int
+
+
+class SegmentationInferenceResponse(BaseModel):
+    version: Literal["phase6_step5_guarded_segmentation_inference_v1"]
+    status: Literal["complete"]
+    analysis_run_uuid: uuid.UUID
+    segmentation_uuid: uuid.UUID
+    model_name: Literal["brats_mri_segmentation"]
+    model_version: Literal["0.5.4"]
+    model_weights_sha256: str
+    model_input_checksum_sha256: str
+    preprocessing_version: str
+    device: str
+    amp_enabled: bool
+    roi_size: list[int]
+    overlap: float
+    threshold: float
+    spatial_shape: list[int]
+    affine_ras: list[list[float]]
+    output_channel_order: list[SegmentationOutput]
+    tc_mask: SegmentationMaskArtifactResponse
+    wt_mask: SegmentationMaskArtifactResponse
+    et_mask: SegmentationMaskArtifactResponse
+    brats_labelmap: SegmentationMaskArtifactResponse
+    voxel_counts: dict[str, int]
+    runtime_seconds: float | None = None
+    review_status: Literal["unreviewed", "accepted", "edited", "rejected"]
+    clinician_modified: bool
+    decision_state: Literal["pending"]
+    segmentation_is_gbm_diagnosis: Literal[False] = False
+    physical_volume_generated: Literal[False] = False
+    anatomical_localization_generated: Literal[False] = False
+    clinical_validation_claimed: Literal[False] = False
+    background_execution_implemented: Literal[True] = True
+    next_step: Literal["phase6_complete"] = "phase6_complete"
+
+
+class SegmentationJobResponse(BaseModel):
+    version: Literal["phase6_step6_background_segmentation_job_v1"]
+    job_uuid: uuid.UUID
+    study_uuid: uuid.UUID
+    status: Literal["queued", "running", "complete", "failed"]
+    model_input_checksum_sha256: str
+    attempts: int
+    max_attempts: int
+    available_at: datetime
+    claimed_at: datetime | None = None
+    heartbeat_at: datetime | None = None
+    lease_expires_at: datetime | None = None
+    completed_at: datetime | None = None
+    analysis_run_uuid: uuid.UUID | None = None
+    segmentation_uuid: uuid.UUID | None = None
+    last_error_code: str | None = None
+    worker_assigned: bool
+    result_available: bool
+    background_execution_implemented: Literal[True] = True
+    physical_volume_generated: Literal[False] = False
+    anatomical_localization_generated: Literal[False] = False
+    clinical_validation_claimed: Literal[False] = False
+    next_step: Literal[
+        "phase6_step6_background_execution_and_recovery",
+        "phase6_complete",
+    ]

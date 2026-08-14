@@ -52,6 +52,25 @@ class Settings(BaseSettings):
     # model weights/configs and must stay outside source control.
     segmentation_bundle_root: Path = Path("var/model_bundles")
 
+    # Phase 6 Step 5 guarded inference controls. "auto" prefers CUDA when
+    # available and otherwise uses CPU. The spatial-voxel guard is rechecked
+    # immediately before the real SegResNet forward path.
+    segmentation_inference_device: Literal["auto", "cpu", "cuda"] = "auto"
+    segmentation_inference_max_spatial_voxels: int = Field(
+        default=20_000_000,
+        ge=32 * 32 * 32,
+        le=100_000_000,
+    )
+
+    # Phase 6 Step 6 durable PostgreSQL-backed worker controls. The worker
+    # refreshes its lease while SegResNet runs so an unexpected process exit
+    # can be detected and safely requeued without keeping API requests open.
+    segmentation_job_lease_seconds: int = Field(default=900, ge=60, le=86_400)
+    segmentation_job_heartbeat_seconds: int = Field(default=60, ge=5, le=3_600)
+    segmentation_job_poll_seconds: float = Field(default=2.0, ge=0.1, le=60.0)
+    segmentation_job_retry_delay_seconds: int = Field(default=30, ge=0, le=86_400)
+    segmentation_job_max_attempts: int = Field(default=2, ge=1, le=10)
+
     # Phase 5 upload boundary. Multipart overhead means the request ceiling is
     # intentionally a little larger than the maximum stored object.
     upload_max_request_bytes: int = Field(
@@ -111,6 +130,13 @@ class Settings(BaseSettings):
             "db_max_overflow": self.db_max_overflow,
             "storage_root": str(self.storage_root),
             "segmentation_bundle_root": str(self.segmentation_bundle_root),
+            "segmentation_inference_device": self.segmentation_inference_device,
+            "segmentation_inference_max_spatial_voxels": self.segmentation_inference_max_spatial_voxels,
+            "segmentation_job_lease_seconds": self.segmentation_job_lease_seconds,
+            "segmentation_job_heartbeat_seconds": self.segmentation_job_heartbeat_seconds,
+            "segmentation_job_poll_seconds": self.segmentation_job_poll_seconds,
+            "segmentation_job_retry_delay_seconds": self.segmentation_job_retry_delay_seconds,
+            "segmentation_job_max_attempts": self.segmentation_job_max_attempts,
             "storage_max_object_bytes": self.storage_max_object_bytes,
             "upload_max_request_bytes": self.upload_max_request_bytes,
             "upload_max_archive_entries": self.upload_max_archive_entries,

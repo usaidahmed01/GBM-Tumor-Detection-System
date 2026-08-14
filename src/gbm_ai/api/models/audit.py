@@ -36,6 +36,12 @@ class AuditAction(str, enum.Enum):
     MODEL_VERSION_REGISTERED = "model_version_registered"
     OBJECT_DOWNLOADED = "object_downloaded"
     SEGMENTATION_EDITED = "segmentation_edited"
+    SEGMENTATION_JOB_ENQUEUED = "segmentation_job_enqueued"
+    SEGMENTATION_JOB_CLAIMED = "segmentation_job_claimed"
+    SEGMENTATION_JOB_REQUEUED = "segmentation_job_requeued"
+    SEGMENTATION_JOB_COMPLETED = "segmentation_job_completed"
+    SEGMENTATION_JOB_FAILED = "segmentation_job_failed"
+    QUANTIFICATION_COMPLETED = "quantification_completed"
     REPORT_FINALIZED = "report_finalized"
 
 
@@ -47,6 +53,8 @@ class AuditEntityType(str, enum.Enum):
     ANALYSIS_RUN = "analysis_run"
     MODEL_VERSION = "model_version"
     SEGMENTATION = "segmentation"
+    SEGMENTATION_JOB = "segmentation_job"
+    QUANTIFICATION = "quantification"
     REPORT = "report"
     STORAGE_OBJECT = "storage_object"
 
