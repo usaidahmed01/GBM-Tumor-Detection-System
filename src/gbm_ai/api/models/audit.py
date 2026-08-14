@@ -42,6 +42,7 @@ class AuditAction(str, enum.Enum):
     SEGMENTATION_JOB_COMPLETED = "segmentation_job_completed"
     SEGMENTATION_JOB_FAILED = "segmentation_job_failed"
     QUANTIFICATION_COMPLETED = "quantification_completed"
+    LOCALIZATION_COMPLETED = "localization_completed"
     REPORT_FINALIZED = "report_finalized"
 
 
@@ -55,6 +56,7 @@ class AuditEntityType(str, enum.Enum):
     SEGMENTATION = "segmentation"
     SEGMENTATION_JOB = "segmentation_job"
     QUANTIFICATION = "quantification"
+    LOCALIZATION = "localization"
     REPORT = "report"
     STORAGE_OBJECT = "storage_object"
 

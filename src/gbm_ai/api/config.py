@@ -52,6 +52,10 @@ class Settings(BaseSettings):
     # model weights/configs and must stay outside source control.
     segmentation_bundle_root: Path = Path("var/model_bundles")
 
+    # Phase 7 standard-space template + atlas cache. Downloaded neuroimaging
+    # assets are checksum-pinned locally and kept outside source control.
+    localization_atlas_root: Path = Path("var/localization_atlas")
+
     # Phase 6 Step 5 guarded inference controls. "auto" prefers CUDA when
     # available and otherwise uses CPU. The spatial-voxel guard is rechecked
     # immediately before the real SegResNet forward path.
@@ -116,6 +120,10 @@ class Settings(BaseSettings):
     def segmentation_bundle_root_resolved(self) -> Path:
         return self.segmentation_bundle_root.expanduser().resolve()
 
+    @property
+    def localization_atlas_root_resolved(self) -> Path:
+        return self.localization_atlas_root.expanduser().resolve()
+
     def safe_summary(self) -> dict[str, object]:
         return {
             "app_name": self.app_name,
@@ -130,6 +138,7 @@ class Settings(BaseSettings):
             "db_max_overflow": self.db_max_overflow,
             "storage_root": str(self.storage_root),
             "segmentation_bundle_root": str(self.segmentation_bundle_root),
+            "localization_atlas_root": str(self.localization_atlas_root),
             "segmentation_inference_device": self.segmentation_inference_device,
             "segmentation_inference_max_spatial_voxels": self.segmentation_inference_max_spatial_voxels,
             "segmentation_job_lease_seconds": self.segmentation_job_lease_seconds,
