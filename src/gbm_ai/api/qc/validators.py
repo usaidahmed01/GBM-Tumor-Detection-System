@@ -211,11 +211,15 @@ def qc_nifti_object(source: BinaryIO) -> BasicQC:
                             continue
                         with archive.open(info, "r") as member:
                             try:
-                                volume_checks.append(_qc_one_nifti(member))
+                                item = _qc_one_nifti(member)
+                                item["volume_index"] = len(volume_checks)
+                                volume_checks.append(item)
                             except Exception:
                                 continue
             else:
-                volume_checks.append(_qc_one_nifti(source))
+                item = _qc_one_nifti(source)
+                item["volume_index"] = 0
+                volume_checks.append(item)
         except (OSError, ValueError, zipfile.BadZipFile):
             fail.append("NIFTI_HEADER_UNREADABLE")
 

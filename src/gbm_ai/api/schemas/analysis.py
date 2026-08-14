@@ -8,6 +8,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from gbm_ai.api.models.analysis import (
     AnalysisStatus,
     DecisionState,
+    BrainScopeStatus,
+    CapabilityRoutingStatus,
     DeidentificationStatus,
     ModelRole,
     QCState,
@@ -35,6 +37,10 @@ class StudyRead(BaseModel):
     deidentification_status: DeidentificationStatus
     qc_status: StudyQCStatus
     qc_summary: dict
+    brain_scope_status: BrainScopeStatus
+    nifti_sequence_mapping: dict
+    capability_routing_status: CapabilityRoutingStatus
+    capability_summary: dict
     status: StudyStatus
     created_at: datetime
     updated_at: datetime

@@ -44,6 +44,10 @@ ALLOWED_TECHNICAL_CONTEXT_KEYS = {
     "reason_count",
     "sequence_label",
     "sequence_status",
+    "routing_status",
+    "brain_scope_status",
+    "eligible_capability_count",
+    "review_capability_count",
 }
 
 

@@ -51,6 +51,20 @@ class StudyQCStatus(str, enum.Enum):
     FAIL = "fail"
 
 
+class BrainScopeStatus(str, enum.Enum):
+    PENDING = "pending"
+    SUPPORTED_BY_METADATA = "supported_by_metadata"
+    CLINICIAN_CONFIRMED = "clinician_confirmed"
+    OUT_OF_SCOPE = "out_of_scope"
+
+
+class CapabilityRoutingStatus(str, enum.Enum):
+    PENDING = "pending"
+    READY = "ready"
+    REVIEW_REQUIRED = "review_required"
+    NO_SUPPORTED_ANALYSIS = "no_supported_analysis"
+
+
 class ModelRole(str, enum.Enum):
     CLASSIFIER = "classifier"
     SEGMENTATION = "segmentation"
@@ -157,6 +171,41 @@ class Study(TimestampMixin, Base):
         default=StudyQCStatus.PENDING,
     )
     qc_summary: Mapped[dict] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+
+    brain_scope_status: Mapped[BrainScopeStatus] = mapped_column(
+        Enum(
+            BrainScopeStatus,
+            name="study_brain_scope_status",
+            native_enum=False,
+            validate_strings=True,
+        ),
+        nullable=False,
+        default=BrainScopeStatus.PENDING,
+    )
+
+    # For NIfTI this stores clinician-confirmed opaque volume-index mappings,
+    # never original filenames.
+    nifti_sequence_mapping: Mapped[dict] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+
+    capability_routing_status: Mapped[CapabilityRoutingStatus] = mapped_column(
+        Enum(
+            CapabilityRoutingStatus,
+            name="study_capability_routing_status",
+            native_enum=False,
+            validate_strings=True,
+        ),
+        nullable=False,
+        default=CapabilityRoutingStatus.PENDING,
+    )
+    capability_summary: Mapped[dict] = mapped_column(
         JSON,
         nullable=False,
         default=dict,
