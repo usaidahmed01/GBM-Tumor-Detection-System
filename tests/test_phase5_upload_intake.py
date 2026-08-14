@@ -7,6 +7,7 @@ from datetime import date
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from PIL import Image
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -195,7 +196,9 @@ def test_real_upload_route_stores_bytes_but_keeps_format_pending(
     app.dependency_overrides[get_db_session] = override_session
     app.dependency_overrides[get_object_store] = override_storage
 
-    payload = b"\x89PNG\r\n\x1a\nsynthetic-image-content"
+    png_buffer = io.BytesIO()
+    Image.new("L", (8, 8), 120).save(png_buffer, format="PNG")
+    payload = png_buffer.getvalue()
 
     with TestClient(app) as client:
         response = client.post(
@@ -213,9 +216,11 @@ def test_real_upload_route_stores_bytes_but_keeps_format_pending(
     body = response.json()
 
     assert body["study_status"] == "uploaded"
-    assert body["source_format"] == "pending"
+    assert body["source_format"] == "image"
     assert body["upload_kind"] == "single_object"
-    assert body["format_detection_status"] == "pending"
+    assert body["parser"] == "pillow"
+    assert body["deidentification_status"] == "not_applicable"
+    assert body["deidentified_working_copy_created"] is False
     assert body["original_filename_stored"] is False
     assert body["stored_size_bytes"] == len(payload)
 

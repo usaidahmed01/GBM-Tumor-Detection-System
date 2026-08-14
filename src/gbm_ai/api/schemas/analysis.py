@@ -8,9 +8,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from gbm_ai.api.models.analysis import (
     AnalysisStatus,
     DecisionState,
+    DeidentificationStatus,
     ModelRole,
     QCState,
     SourceFormat,
+    StudyQCStatus,
     StudyStatus,
 )
 
@@ -28,9 +30,30 @@ class StudyRead(BaseModel):
     modality: str
     study_instance_uid: str | None
     deidentified_metadata: dict
-    storage_key: str | None
     checksum_sha256: str | None
+    deidentified_checksum_sha256: str | None
+    deidentification_status: DeidentificationStatus
+    qc_status: StudyQCStatus
+    qc_summary: dict
     status: StudyStatus
+    created_at: datetime
+    updated_at: datetime
+
+
+class SeriesRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    study_id: uuid.UUID
+    series_uid: str
+    series_number: int | None
+    detected_sequence: str | None
+    confirmed_sequence: str | None
+    sequence_confidence: float | None
+    sequence_metadata: dict
+    slice_count: int
+    spacing_orientation_metadata: dict
+    working_member_prefix: str
     created_at: datetime
     updated_at: datetime
 

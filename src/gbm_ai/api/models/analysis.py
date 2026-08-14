@@ -11,6 +11,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Index,
+    Integer,
     JSON,
     String,
     Text,
@@ -33,6 +34,21 @@ class StudyStatus(str, enum.Enum):
     UPLOADED = "uploaded"
     READY_FOR_ANALYSIS = "ready_for_analysis"
     FAILED = "failed"
+
+
+class DeidentificationStatus(str, enum.Enum):
+    PENDING = "pending"
+    NOT_APPLICABLE = "not_applicable"
+    METADATA_DEIDENTIFIED = "metadata_deidentified"
+    BLOCKED_PIXEL_PHI_RISK = "blocked_pixel_phi_risk"
+    FAILED = "failed"
+
+
+class StudyQCStatus(str, enum.Enum):
+    PENDING = "pending"
+    PASS = "pass"
+    PARTIAL = "partial"
+    FAIL = "fail"
 
 
 class ModelRole(str, enum.Enum):
@@ -101,6 +117,7 @@ class Study(TimestampMixin, Base):
         nullable=False,
         default=dict,
     )
+
     storage_key: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
@@ -109,6 +126,42 @@ class Study(TimestampMixin, Base):
         String(64),
         nullable=True,
     )
+
+    deidentified_storage_key: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+    deidentified_checksum_sha256: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+    )
+    deidentification_status: Mapped[DeidentificationStatus] = mapped_column(
+        Enum(
+            DeidentificationStatus,
+            name="study_deidentification_status",
+            native_enum=False,
+            validate_strings=True,
+        ),
+        nullable=False,
+        default=DeidentificationStatus.PENDING,
+    )
+
+    qc_status: Mapped[StudyQCStatus] = mapped_column(
+        Enum(
+            StudyQCStatus,
+            name="study_qc_status",
+            native_enum=False,
+            validate_strings=True,
+        ),
+        nullable=False,
+        default=StudyQCStatus.PENDING,
+    )
+    qc_summary: Mapped[dict] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+
     status: Mapped[StudyStatus] = mapped_column(
         Enum(
             StudyStatus,
@@ -120,10 +173,75 @@ class Study(TimestampMixin, Base):
         default=StudyStatus.AWAITING_UPLOAD,
     )
 
+    series: Mapped[list["Series"]] = relationship(
+        back_populates="study",
+        cascade="all, delete-orphan",
+    )
     analysis_runs: Mapped[list["AnalysisRun"]] = relationship(
         back_populates="study",
         cascade="all, delete-orphan",
     )
+
+
+class Series(TimestampMixin, Base):
+    __tablename__ = "series"
+    __table_args__ = (
+        Index("ix_series_study_created", "study_id", "created_at"),
+        Index("ux_series_study_uid", "study_id", "series_uid", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    study_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("studies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    series_uid: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+    )
+    series_number: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    detected_sequence: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+    )
+    confirmed_sequence: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+    )
+    sequence_confidence: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+    sequence_metadata: Mapped[dict] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+
+    slice_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+    spacing_orientation_metadata: Mapped[dict] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    working_member_prefix: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+    )
+
+    study: Mapped[Study] = relationship(back_populates="series")
 
 
 class ModelVersion(TimestampMixin, Base):

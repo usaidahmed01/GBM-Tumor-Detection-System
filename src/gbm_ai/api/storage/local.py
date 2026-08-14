@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import stat
 import uuid
 from dataclasses import dataclass
@@ -36,12 +37,8 @@ class LocalObjectStore:
     """
     Protected local object storage for development.
 
-    Design rules:
-    - objects are addressed by opaque internal storage keys;
-    - original patient/file names are not embedded into generated keys;
-    - paths are always resolved under the configured storage root;
-    - writes are streamed, SHA-256 hashed and atomically committed;
-    - storage is not exposed as FastAPI static/public content.
+    Objects are addressed only by internal opaque keys and never mounted as a
+    public FastAPI static directory.
     """
 
     def __init__(
@@ -68,15 +65,31 @@ class LocalObjectStore:
 
     @staticmethod
     def _apply_private_permissions(path: Path) -> None:
-        # On POSIX, restrict storage directories to the current user.
-        # Windows ACLs are not modified here; the app still never exposes
-        # this directory through a static/public route.
         if os.name == "posix":
             path.chmod(stat.S_IRWXU)
 
     def generate_study_source_key(self, study_uuid: uuid.UUID) -> str:
         object_uuid = uuid.uuid4()
         return f"studies/{study_uuid}/source/{object_uuid}.bin"
+
+    def generate_study_derived_key(
+        self,
+        study_uuid: uuid.UUID,
+        category: str,
+        *,
+        suffix: str = ".bin",
+    ) -> str:
+        category = category.strip().lower()
+        if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,63}", category):
+            raise InvalidStorageKeyError("invalid derived-object category")
+        if not re.fullmatch(r"\.[a-z0-9.]{1,15}", suffix.lower()):
+            raise InvalidStorageKeyError("invalid derived-object suffix")
+
+        object_uuid = uuid.uuid4()
+        return (
+            f"studies/{study_uuid}/derived/{category}/"
+            f"{object_uuid}{suffix.lower()}"
+        )
 
     def _resolve_key(self, storage_key: str) -> Path:
         if not storage_key or storage_key.startswith(("/", "\\")):

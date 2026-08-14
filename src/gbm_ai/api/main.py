@@ -10,7 +10,9 @@ from gbm_ai.api.middleware.request_body_limit import RequestBodyLimitMiddleware
 from gbm_ai.api.middleware.request_id import RequestIdMiddleware
 from gbm_ai.api.routers.analysis import router as analysis_router
 from gbm_ai.api.routers.clinical import router as clinical_router
+from gbm_ai.api.routers.dicom import router as dicom_router
 from gbm_ai.api.routers.system import router as system_router
+from gbm_ai.api.routers.qc import router as qc_router
 from gbm_ai.api.routers.uploads import router as uploads_router
 from gbm_ai.api.storage.local import LocalObjectStore
 
@@ -58,6 +60,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(clinical_router, prefix=prefix)
     app.include_router(analysis_router, prefix=prefix)
     app.include_router(uploads_router, prefix=prefix)
+    app.include_router(dicom_router, prefix=prefix)
+    app.include_router(qc_router, prefix=prefix)
     return app
 
 

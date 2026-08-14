@@ -39,6 +39,11 @@ ALLOWED_TECHNICAL_CONTEXT_KEYS = {
     "operation",
     "http_method",
     "path_template",
+    "qc_status",
+    "manual_review_required",
+    "reason_count",
+    "sequence_label",
+    "sequence_status",
 }
 
 
