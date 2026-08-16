@@ -11,6 +11,7 @@ from gbm_ai.api.models.analysis import AnalysisRun, AnalysisStatus, SourceFormat
 from gbm_ai.api.models.localization import AnatomicalLocalization
 from gbm_ai.api.models.quantification import TumorQuantification
 from gbm_ai.api.models.segmentation import Segmentation, SegmentationReviewStatus, SegmentationStatus
+from gbm_ai.api.services.current_segmentation import resolve_current_completed_segmentation
 from gbm_ai.api.storage.local import LocalObjectStore
 
 
@@ -67,39 +68,13 @@ class ViewerAssetStream:
 
 
 def _require_current_segmentation(db: Session, study: Study) -> tuple[AnalysisRun, Segmentation]:
-    summary = dict(study.segmentation_preparation_summary or {})
-    inference = dict(summary.get("inference") or {})
-    if inference.get("status") != "complete" or not inference.get("segmentation_uuid"):
+    resolved = resolve_current_completed_segmentation(db, study, repair_summary=True)
+    if resolved is None:
         raise ClinicalViewerServiceError(
             "VIEWER_SEGMENTATION_NOT_READY",
-            "a current completed 3D segmentation is required before the clinical viewer can be opened",
+            "the current 3D segmentation is not ready for review",
         )
-
-    try:
-        segmentation_uuid = uuid.UUID(str(inference["segmentation_uuid"]))
-    except (TypeError, ValueError) as exc:
-        raise ClinicalViewerServiceError(
-            "VIEWER_SEGMENTATION_REFERENCE_INVALID",
-            "the current segmentation reference is invalid",
-        ) from exc
-
-    segmentation = db.get(Segmentation, segmentation_uuid)
-    if segmentation is None or segmentation.status != SegmentationStatus.GENERATED:
-        raise ClinicalViewerServiceError(
-            "VIEWER_SEGMENTATION_NOT_FOUND",
-            "the current persisted segmentation result is unavailable",
-        )
-    analysis = db.get(AnalysisRun, segmentation.analysis_run_id)
-    if (
-        analysis is None
-        or analysis.study_id != study.id
-        or analysis.status != AnalysisStatus.COMPLETE
-    ):
-        raise ClinicalViewerServiceError(
-            "VIEWER_SEGMENTATION_PROVENANCE_INVALID",
-            "the segmentation does not belong to a completed analysis for this study",
-        )
-    return analysis, segmentation
+    return resolved
 
 
 def _require_model_geometry(study: Study) -> dict:

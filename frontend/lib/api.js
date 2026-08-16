@@ -176,3 +176,41 @@ export async function fetchCurrentReport(studyUuid) {
     method: 'GET', cache: 'no-store', headers: { Accept: 'application/json' },
   }));
 }
+
+export async function updateStudyIntakeContext(studyUuid, payload) {
+  return checkedJson(await fetch(`/gbm-api/studies/${encodeURIComponent(studyUuid)}/intake-context`, {
+    method: 'PATCH', cache: 'no-store',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(payload),
+  }));
+}
+
+export async function fetchClassifierRuntimeStatus() {
+  return checkedJson(await fetch('/gbm-api/classifier/runtime', {
+    method: 'GET', cache: 'no-store', headers: { Accept: 'application/json' },
+  }));
+}
+
+export async function runStudyClassifier(studyUuid) {
+  return checkedJson(await fetch(`/gbm-api/studies/${encodeURIComponent(studyUuid)}/classifier/run`, {
+    method: 'POST', cache: 'no-store', headers: { Accept: 'application/json' },
+  }));
+}
+
+export async function fetchCurrentClassifierResult(studyUuid) {
+  return checkedJson(await fetch(`/gbm-api/studies/${encodeURIComponent(studyUuid)}/classifier/current`, {
+    method: 'GET', cache: 'no-store', headers: { Accept: 'application/json' },
+  }));
+}
+
+export async function fetchCurrentStudyQc(studyUuid) {
+  return checkedJson(await fetch(`/gbm-api/studies/${encodeURIComponent(studyUuid)}/qc`, {
+    method: 'GET', cache: 'no-store', headers: { Accept: 'application/json' },
+  }));
+}
+
+export async function fetchCurrentCapabilities(studyUuid) {
+  return checkedJson(await fetch(`/gbm-api/studies/${encodeURIComponent(studyUuid)}/capabilities`, {
+    method: 'GET', cache: 'no-store', headers: { Accept: 'application/json' },
+  }));
+}

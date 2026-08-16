@@ -28,6 +28,7 @@ from gbm_ai.api.quantification import (
     validate_physical_geometry,
 )
 from gbm_ai.api.services.audit import record_audit_event
+from gbm_ai.api.services.current_segmentation import resolve_current_completed_segmentation
 from gbm_ai.api.storage.local import LocalObjectStore
 
 
@@ -56,49 +57,25 @@ def _current_segmentation(db: Session, study: Study) -> tuple[AnalysisRun, Segme
 
     summary = dict(study.segmentation_preparation_summary or {})
     model_input = dict(summary.get("model_input") or {})
-    inference = dict(summary.get("inference") or {})
     current_input_checksum = str(model_input.get("checksum_sha256") or "")
-    current_segmentation_uuid = str(inference.get("segmentation_uuid") or "")
-    if (
-        model_input.get("status") != "ready"
-        or len(current_input_checksum) != 64
-        or inference.get("status") != "complete"
-        or inference.get("segmentation_generated") is not True
-        or not current_segmentation_uuid
-    ):
+    if model_input.get("status") != "ready" or len(current_input_checksum) != 64:
         raise TumorQuantificationServiceError(
             "PHYSICAL_QUANTIFICATION_CURRENT_SEGMENTATION_NOT_READY",
             "a current completed 3D segmentation is required before physical quantification",
         )
 
-    try:
-        segmentation_uuid = uuid.UUID(current_segmentation_uuid)
-    except (TypeError, ValueError, AttributeError) as exc:
-        raise TumorQuantificationServiceError(
-            "PHYSICAL_QUANTIFICATION_SEGMENTATION_REFERENCE_INVALID",
-            "current segmentation reference is invalid",
-        ) from exc
-
-    statement = (
-        select(AnalysisRun, Segmentation)
-        .join(Segmentation, Segmentation.analysis_run_id == AnalysisRun.id)
-        .where(
-            AnalysisRun.study_id == study.id,
-            AnalysisRun.status == AnalysisStatus.COMPLETE,
-            Segmentation.status == SegmentationStatus.GENERATED,
-            Segmentation.model_input_checksum_sha256 == current_input_checksum,
-            Segmentation.id == segmentation_uuid,
-        )
-        .order_by(Segmentation.created_at.desc())
-        .limit(1)
-    )
-    row = db.execute(statement).first()
-    if row is None:
+    resolved = resolve_current_completed_segmentation(db, study, repair_summary=True)
+    if resolved is None:
         raise TumorQuantificationServiceError(
             "PHYSICAL_QUANTIFICATION_CURRENT_SEGMENTATION_MISSING",
             "current segmentation metadata could not be resolved from the database",
         )
-    analysis, segmentation = row
+    analysis, segmentation = resolved
+    if segmentation.model_input_checksum_sha256 != current_input_checksum:
+        raise TumorQuantificationServiceError(
+            "PHYSICAL_QUANTIFICATION_CURRENT_SEGMENTATION_MISSING",
+            "current segmentation does not match the prepared model input",
+        )
     if segmentation.review_status == SegmentationReviewStatus.REJECTED:
         raise TumorQuantificationServiceError(
             "PHYSICAL_QUANTIFICATION_SEGMENTATION_REJECTED",

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import uuid
@@ -56,6 +57,7 @@ class DeploymentManifest:
     folds: list[int]
     checkpoint_root_default: str
     checkpoint_filenames: list[str]
+    checkpoint_sha256: dict[str, str]
     temperature: float
     threshold_low: float
     threshold_high: float
@@ -82,6 +84,7 @@ def load_deployment_manifest(project_root: Path | None = None) -> DeploymentMani
         folds=[int(x) for x in payload["folds"]],
         checkpoint_root_default=str(payload["checkpoint_root_default"]),
         checkpoint_filenames=[str(x) for x in payload["checkpoint_filenames"]],
+        checkpoint_sha256={str(k): str(v).lower() for k, v in (payload.get("checkpoint_sha256") or {}).items()},
         temperature=float(calibration["temperature"]),
         threshold_low=float(thresholds["T_low"]),
         threshold_high=float(thresholds["T_high"]),
@@ -110,6 +113,14 @@ def checkpoint_paths(settings: Settings, manifest: DeploymentManifest | None = N
     return [root / name for name in manifest.checkpoint_filenames]
 
 
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def classifier_runtime_status(settings: Settings) -> dict[str, Any]:
     manifest = load_deployment_manifest()
     policy = _safety_policy()
@@ -118,13 +129,21 @@ def classifier_runtime_status(settings: Settings) -> dict[str, Any]:
     checkpoints = []
     for fold, path in zip(manifest.folds, paths):
         exists = path.exists()
+        expected_sha = manifest.checkpoint_sha256.get(path.name)
+        actual_sha = _sha256_file(path) if exists and expected_sha else None
+        checksum_ok = bool(exists and (expected_sha is None or actual_sha == expected_sha))
         checkpoints.append({
             "fold": fold,
             "path": str(path),
             "exists": exists,
+            "sha256": actual_sha,
+            "expected_sha256": expected_sha,
+            "checksum_ok": checksum_ok,
         })
         if not exists:
             missing_assets.append(str(path))
+        elif not checksum_ok:
+            missing_assets.append(f"checksum mismatch: {path}")
     return {
         "runtime_version": manifest.runtime_version,
         "deployment_version": manifest.deployment_version,
@@ -133,7 +152,7 @@ def classifier_runtime_status(settings: Settings) -> dict[str, Any]:
         "ensemble_strategy": manifest.ensemble_strategy,
         "checkpoint_root": str(settings.classifier_checkpoint_root_resolved),
         "checkpoint_count_expected": len(paths),
-        "checkpoint_count_available": sum(1 for p in paths if p.exists()),
+        "checkpoint_count_available": sum(1 for item in checkpoints if item["checksum_ok"]),
         "checkpoints": checkpoints,
         "threshold_low": manifest.threshold_low,
         "threshold_high": manifest.threshold_high,
@@ -210,17 +229,38 @@ def _decision_from_probability(probability: float, low: float, high: float) -> D
     return DecisionState.INDETERMINATE
 
 
-def _qc_state_from_study(study: Study) -> QCState:
-    if study.qc_status == StudyQCStatus.PASS:
-        return QCState.PASS
+def _effective_classifier_qc_state(study: Study) -> QCState:
+    """Return QC state after resolving manual brain-scope confirmation.
+
+    Standalone raster QC is intentionally PARTIAL before a clinician confirms
+    that the upload is a brain MRI because raster files do not carry reliable
+    body-part metadata. Once that single partial reason is resolved, the 2D
+    classifier should not be forced to indeterminate solely because the stored
+    raw QC status remains PARTIAL. Other unresolved image-quality reasons still
+    downgrade the classifier to REVIEW.
+    """
     if study.qc_status == StudyQCStatus.FAIL:
         return QCState.FAIL
-    return QCState.REVIEW
+    if study.qc_status == StudyQCStatus.PASS:
+        return QCState.PASS
+
+    partial = set((study.qc_summary or {}).get("partial_reasons") or [])
+    if getattr(study.brain_scope_status, "value", study.brain_scope_status) in {
+        "clinician_confirmed",
+        "supported_by_metadata",
+    }:
+        partial.discard("BRAIN_SCOPE_UNVERIFIED_FOR_RASTER")
+    return QCState.PASS if not partial else QCState.REVIEW
 
 
-def _safety_reasons(study: Study, probability_state: DecisionState) -> list[str]:
+def _qc_state_from_study(study: Study) -> QCState:
+    return _effective_classifier_qc_state(study)
+
+
+def _safety_reasons(study: Study, probability_state: DecisionState, qc_state: QCState | None = None) -> list[str]:
     reasons: list[str] = []
-    if study.qc_status != StudyQCStatus.PASS:
+    effective_qc = qc_state or _effective_classifier_qc_state(study)
+    if effective_qc != QCState.PASS:
         reasons.append("UPLOAD_QC_NOT_PASS")
     if probability_state == DecisionState.INDETERMINATE:
         reasons.append("PROBABILITY_BETWEEN_T_LOW_AND_T_HIGH")
@@ -298,7 +338,7 @@ def run_classifier_for_study(
         manifest.threshold_high,
     )
     qc_state = _qc_state_from_study(study)
-    safety_reason_codes = _safety_reasons(study, probability_state)
+    safety_reason_codes = _safety_reasons(study, probability_state, qc_state)
     final_state = probability_state if qc_state == QCState.PASS else DecisionState.INDETERMINATE
 
     model_version = ensure_classifier_model_version(db, settings)

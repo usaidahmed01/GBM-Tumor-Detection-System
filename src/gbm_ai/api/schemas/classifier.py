@@ -11,6 +11,9 @@ class ClassifierCheckpointStatus(BaseModel):
     fold: int
     path: str
     exists: bool
+    sha256: str | None = None
+    expected_sha256: str | None = None
+    checksum_ok: bool = False
 
 
 class ClassifierRuntimeStatusResponse(BaseModel):

@@ -27,6 +27,7 @@ from gbm_ai.api.models.segmentation import (
 )
 from gbm_ai.api.services.audit import record_audit_event
 from gbm_ai.api.services.classifier_runtime import deployment_strategy_frozen, load_deployment_manifest
+from gbm_ai.api.services.current_segmentation import resolve_current_completed_segmentation
 
 
 DECISION_FUSION_VERSION = "phase9_step1_guarded_decision_fusion_v1"
@@ -56,26 +57,8 @@ def _json_safe(value):
 
 
 def _current_segmentation(db: Session, study: Study) -> Segmentation | None:
-    summary = dict(study.segmentation_preparation_summary or {})
-    inference = dict(summary.get("inference") or {})
-    raw_uuid = inference.get("segmentation_uuid")
-    if inference.get("status") != "complete" or not raw_uuid:
-        return None
-    try:
-        segmentation_uuid = uuid.UUID(str(raw_uuid))
-    except (TypeError, ValueError):
-        return None
-    segmentation = db.get(Segmentation, segmentation_uuid)
-    if segmentation is None or segmentation.status != SegmentationStatus.GENERATED:
-        return None
-    analysis = db.get(AnalysisRun, segmentation.analysis_run_id)
-    if (
-        analysis is None
-        or analysis.study_id != study.id
-        or analysis.status != AnalysisStatus.COMPLETE
-    ):
-        return None
-    return segmentation
+    resolved = resolve_current_completed_segmentation(db, study, repair_summary=True)
+    return resolved[1] if resolved is not None else None
 
 
 def _current_quantification(

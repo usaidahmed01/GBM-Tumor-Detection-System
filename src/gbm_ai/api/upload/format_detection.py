@@ -113,34 +113,41 @@ def detect_nifti(source: BinaryIO) -> DetectedFormat | None:
             "Install cumulative requirements.txt."
         ) from exc
 
-    candidates: list[tuple[int, object]] = []
-
-    # NIfTI-1: sizeof_hdr == 348 in native or swapped endian.
-    if len(header_bytes) >= 348:
-        raw = io.BytesIO(header_bytes)
+    # Select the NIfTI parser from the header signature before asking NiBabel
+    # to parse it. Trying NIfTI-2 against a valid NIfTI-1 payload causes
+    # noisy repair warnings (for example, "sizeof_hdr should be 540") even
+    # though the NIfTI-1 file is valid.
+    version: int
+    header: object
+    if len(header_bytes) >= 348 and header_bytes[344:348] in {
+        b"n+1\x00",
+        b"ni1\x00",
+    }:
         try:
-            header = nib.Nifti1Header.from_fileobj(raw, check=True)
-            magic = bytes(header["magic"])
-            if magic in {b"n+1\x00", b"ni1\x00"}:
-                candidates.append((1, header))
+            header = nib.Nifti1Header.from_fileobj(
+                io.BytesIO(header_bytes),
+                check=True,
+            )
         except Exception:
-            pass
-
-    # NIfTI-2: sizeof_hdr == 540.
-    if len(header_bytes) >= 540:
-        raw = io.BytesIO(header_bytes)
+            return None
+        version = 1
+    elif (
+        len(header_bytes) >= 540
+        and (
+            header_bytes[4:12].startswith(b"n+2")
+            or header_bytes[4:12].startswith(b"ni2")
+        )
+    ):
         try:
-            header = nib.Nifti2Header.from_fileobj(raw, check=True)
-            magic = bytes(header["magic"])
-            if magic.startswith(b"n+2") or magic.startswith(b"ni2"):
-                candidates.append((2, header))
+            header = nib.Nifti2Header.from_fileobj(
+                io.BytesIO(header_bytes),
+                check=True,
+            )
         except Exception:
-            pass
-
-    if not candidates:
+            return None
+        version = 2
+    else:
         return None
-
-    version, header = candidates[0]
     shape = tuple(int(v) for v in header.get_data_shape())
     dtype = str(header.get_data_dtype())
     magic = bytes(header["magic"])

@@ -13,6 +13,7 @@ const VIEWPORTS = [
 const THREE_D_VIEWPORT_ID = 'GBM_3D_REVIEW';
 
 const TOOL_LABELS = { window: 'Window / Level', pan: 'Pan', zoom: 'Zoom' };
+const TOOL_SHORTCUTS = { window: 'W', pan: 'P', zoom: 'Z' };
 let cornerstoneBootstrapPromise = null;
 
 function Icon({ type }) {
@@ -54,6 +55,59 @@ function safeIdPart(value) {
   return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
 }
 
+function setLabelmapStyle(tools, specifier, style) {
+  const segmentation = tools?.segmentation;
+  if (typeof segmentation?.config?.style?.setStyle === 'function') {
+    return segmentation.config.style.setStyle(specifier, style);
+  }
+  if (typeof segmentation?.segmentationStyle?.setStyle === 'function') {
+    return segmentation.segmentationStyle.setStyle(specifier, style);
+  }
+  if (typeof segmentation?.setStyle === 'function') {
+    return segmentation.setStyle(specifier, style);
+  }
+  throw new Error('Cornerstone segmentation style API is unavailable for the installed tools version.');
+}
+
+function setActiveLabelmap(tools, viewportId, segmentationId) {
+  if (typeof tools?.segmentation?.setActiveSegmentation === 'function') {
+    return tools.segmentation.setActiveSegmentation(viewportId, segmentationId);
+  }
+}
+
+function configureLabelmapColors(tools, viewportIds, segmentationId) {
+  const segmentation = tools?.segmentation;
+  const colorApi = segmentation?.config?.color || segmentation?.color || segmentation;
+  const palette = {
+    1: [255, 189, 106, 255], // TC
+    2: [39, 211, 209, 255],  // WT
+    4: [255, 92, 171, 255],  // ET
+  };
+
+  if (typeof colorApi?.setSegmentIndexColor === 'function') {
+    for (const viewportId of viewportIds) {
+      for (const [segmentIndex, rgba] of Object.entries(palette)) {
+        colorApi.setSegmentIndexColor(viewportId, segmentationId, Number(segmentIndex), rgba);
+      }
+    }
+    return;
+  }
+
+  if (typeof colorApi?.addColorLUT === 'function' && typeof colorApi?.setColorLUT === 'function') {
+    const lut = [
+      [0, 0, 0, 0],
+      palette[1],
+      palette[2],
+      [140, 140, 140, 0],
+      palette[4],
+    ];
+    const addedIndex = colorApi.addColorLUT(lut);
+    if (addedIndex !== undefined && addedIndex !== null) {
+      for (const viewportId of viewportIds) colorApi.setColorLUT(viewportId, segmentationId, addedIndex);
+    }
+  }
+}
+
 export default function CornerstoneMprViewer({
   manifest,
   sequence,
@@ -81,6 +135,7 @@ export default function CornerstoneMprViewer({
   const runtimeRef = useRef(null);
   const [state, setState] = useState({ status: 'loading', message: 'Preparing 3D volume…' });
   const [threeDOverlayStatus, setThreeDOverlayStatus] = useState('off');
+  const [viewerRetryToken, setViewerRetryToken] = useState(0);
 
   const sourceAsset = useMemo(() => mriAssetForSequence(manifest, sequence), [manifest, sequence]);
   const labelmapAsset = useMemo(() => assetByAlias(manifest, 'mask_labelmap'), [manifest]);
@@ -94,14 +149,20 @@ export default function CornerstoneMprViewer({
         setState({ status: 'error', message: 'Required MRI or segmentation labelmap asset is unavailable.' });
         return;
       }
-      setState({ status: 'loading', message: `Loading ${sequence} volume and editable AI overlay…` });
+      setState({ status: 'loading', message: `Loading ${sequence} imaging data…` });
 
       try {
         const { core, tools, nifti } = await bootstrapCornerstone();
         if (cancelled) return;
 
-        const sourceImageIds = await nifti.createNiftiImageIdsAndCacheMetadata({ url: loaderUrlForAsset(sourceAsset) });
-        const labelmapImageIds = await nifti.createNiftiImageIdsAndCacheMetadata({ url: loaderUrlForAsset(labelmapAsset) });
+        const sourceUrl = loaderUrlForAsset(sourceAsset);
+        const labelmapUrl = loaderUrlForAsset(labelmapAsset);
+        if (!sourceUrl || !labelmapUrl) {
+          throw new Error('MRI viewer asset URL could not be prepared. Please retry the viewer.');
+        }
+        const sourceImageIds = await nifti.createNiftiImageIdsAndCacheMetadata({ url: sourceUrl });
+        if (!cancelled) setState({ status: 'loading', message: `Loading ${sequence} segmentation overlay…` });
+        const labelmapImageIds = await nifti.createNiftiImageIdsAndCacheMetadata({ url: labelmapUrl });
         if (cancelled) return;
 
         const suffix = `${safeIdPart(manifest.study_uuid)}_${sequence}_${sourceAsset.checksum_sha256.slice(0, 8)}_${labelmapAsset.checksum_sha256.slice(0, 8)}`;
@@ -150,6 +211,7 @@ export default function CornerstoneMprViewer({
         for (const viewport of VIEWPORTS) toolGroup.addViewport(viewport.id, renderingEngineId);
         if (threeDVisible) threeDToolGroup.addViewport(THREE_D_VIEWPORT_ID, renderingEngineId);
 
+        if (!cancelled) setState({ status: 'loading', message: 'Preparing multiplanar MRI views…' });
         const volume = await core.volumeLoader.createAndCacheVolume(volumeId, { imageIds: sourceImageIds });
         const labelmapVolume = await core.volumeLoader.createAndCacheVolume(labelmapVolumeId, { imageIds: labelmapImageIds });
         await Promise.all([volume.load(), labelmapVolume.load()]);
@@ -165,6 +227,7 @@ export default function CornerstoneMprViewer({
           threeDToolGroup.setToolActive(tools.ZoomTool.toolName, { bindings: [{ mouseButton: E.Secondary }] });
         }
 
+        if (!cancelled) setState({ status: 'loading', message: 'Applying AI segmentation overlay…' });
         tools.segmentation.addSegmentations([{
           segmentationId,
           representation: {
@@ -179,7 +242,7 @@ export default function CornerstoneMprViewer({
           ])),
         );
         for (const viewport of VIEWPORTS) {
-          try { tools.segmentation.setActiveSegmentation(viewport.id, segmentationId); } catch {}
+          try { setActiveLabelmap(tools, viewport.id, segmentationId); } catch {}
         }
         setThreeDOverlayStatus(threeDVisible ? 'loading' : 'off');
         if (threeDVisible) {
@@ -196,42 +259,53 @@ export default function CornerstoneMprViewer({
         }
 
         try {
-          const lut = [
-            [0, 0, 0, 0],
-            [255, 189, 106, 255],
-            [39, 211, 209, 255],
-            [140, 140, 140, 0],
-            [255, 92, 171, 255],
-          ];
-          const lutIndex = tools.segmentation.addColorLUT(lut);
-          for (const viewport of VIEWPORTS) tools.segmentation.setColorLUT(viewport.id, segmentationId, lutIndex);
-          if (threeDVisible) {
-            try { tools.segmentation.setColorLUT(THREE_D_VIEWPORT_ID, segmentationId, lutIndex); } catch {}
-          }
-        } catch {}
+          configureLabelmapColors(
+            tools,
+            [...VIEWPORTS.map((viewport) => viewport.id), ...(threeDVisible ? [THREE_D_VIEWPORT_ID] : [])],
+            segmentationId,
+          );
+        } catch (colorError) {
+          console.warn('Custom segmentation colors could not be applied; default Cornerstone colors will be used.', colorError);
+        }
 
         const applyOverlayStyle = (visible, opacity) => {
           for (const viewport of VIEWPORTS) {
-            tools.segmentation.setStyle(
-              { viewportId: viewport.id, segmentationId, type: tools.Enums.SegmentationRepresentations.Labelmap },
-              {
-                renderFill: visible,
-                renderOutline: visible,
-                fillAlpha: visible ? opacity : 0,
-                outlineAlpha: visible ? Math.min(1, opacity + 0.35) : 0,
-                outlineWidth: 1.5,
-              },
-            );
+            try {
+              setLabelmapStyle(
+                tools,
+                { viewportId: viewport.id, segmentationId, type: tools.Enums.SegmentationRepresentations.Labelmap },
+                {
+                  renderFill: visible,
+                  renderOutline: visible,
+                  fillAlpha: visible ? opacity : 0,
+                  outlineAlpha: visible ? Math.min(1, opacity + 0.35) : 0,
+                  outlineOpacity: visible ? Math.min(1, opacity + 0.35) : 0,
+                  renderFillInactive: visible,
+                  renderOutlineInactive: visible,
+                  fillAlphaInactive: visible ? opacity : 0,
+                  outlineOpacityInactive: visible ? Math.min(1, opacity + 0.35) : 0,
+                  outlineWidth: 1.5,
+                },
+              );
+            } catch (styleError) {
+              console.warn(`Segmentation style unavailable for ${viewport.id}; overlay rendering will use Cornerstone defaults.`, styleError);
+            }
           }
           if (threeDVisible && threeDOverlayStatus !== 'unavailable') {
             try {
-              tools.segmentation.setStyle(
+              setLabelmapStyle(
+                tools,
                 { viewportId: THREE_D_VIEWPORT_ID, segmentationId, type: tools.Enums.SegmentationRepresentations.Labelmap },
                 {
                   renderFill: visible,
                   renderOutline: visible,
                   fillAlpha: visible ? Math.min(0.34, opacity) : 0,
                   outlineAlpha: visible ? Math.min(0.72, opacity + 0.2) : 0,
+                  outlineOpacity: visible ? Math.min(0.72, opacity + 0.2) : 0,
+                  renderFillInactive: visible,
+                  renderOutlineInactive: visible,
+                  fillAlphaInactive: visible ? Math.min(0.34, opacity) : 0,
+                  outlineOpacityInactive: visible ? Math.min(0.72, opacity + 0.2) : 0,
                   outlineWidth: 1,
                 },
               );
@@ -339,7 +413,7 @@ export default function CornerstoneMprViewer({
     setup();
     return () => { cancelled = true; cleanup(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manifest.study_uuid, sequence, sourceAsset?.checksum_sha256, labelmapAsset?.checksum_sha256, reloadToken, threeDVisible]);
+  }, [manifest.study_uuid, sequence, sourceAsset?.checksum_sha256, labelmapAsset?.checksum_sha256, reloadToken, threeDVisible, viewerRetryToken]);
 
   useEffect(() => { runtimeRef.current?.applyOverlayStyle?.(overlayVisible, overlayOpacity); }, [overlayVisible, overlayOpacity]);
   useEffect(() => { runtimeRef.current?.activateNavigationTool?.(activeTool); runtimeRef.current?.applyEditTool?.(editMode, editSegmentIndex, brushSize); }, [activeTool, editMode, editSegmentIndex, brushSize]);
@@ -352,6 +426,25 @@ export default function CornerstoneMprViewer({
     engine.render();
   }, [resetToken]);
 
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      const target = event.target;
+      if (target?.matches?.('input, textarea, select, [contenteditable="true"]')) return;
+      if (editMode !== 'off') return;
+      const key = event.key.toLowerCase();
+      const shortcutMap = { w: 'window', p: 'pan', z: 'zoom' };
+      if (shortcutMap[key]) {
+        event.preventDefault();
+        onActiveToolChange(shortcutMap[key]);
+      } else if (key === 'r') {
+        event.preventDefault();
+        onReset?.();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [editMode, onActiveToolChange, onReset]);
+
   return (
     <section className={editMode === 'off' ? 'medical-viewer-frame' : 'medical-viewer-frame medical-viewer-frame--editing'}>
       <div className="medical-toolbar">
@@ -362,15 +455,17 @@ export default function CornerstoneMprViewer({
               disabled={editMode !== 'off'}
               className={activeTool === key && editMode === 'off' ? 'tool-button tool-button--active' : 'tool-button'}
               onClick={() => onActiveToolChange(key)}
-              title={editMode === 'off' ? `${label} with primary mouse button` : 'Exit correction mode to use this primary tool'}
+              title={editMode === 'off' ? `${label} with primary mouse button · ${TOOL_SHORTCUTS[key]}` : 'Exit correction mode to use this primary tool'}
+              aria-pressed={activeTool === key && editMode === 'off'}
+              aria-keyshortcuts={TOOL_SHORTCUTS[key]}
             >
-              <Icon type={key} /><span>{label}</span>
+              <Icon type={key} /><span>{label}</span><kbd>{TOOL_SHORTCUTS[key]}</kbd>
             </button>
           ))}
-          <button className="tool-button" onClick={onReset} title="Reset all viewport cameras"><Icon type="reset"/><span>Reset</span></button>
+          <button className="tool-button" onClick={onReset} title="Reset all viewport cameras · R" aria-keyshortcuts="R"><Icon type="reset"/><span>Reset</span><kbd>R</kbd></button>
         </div>
         {editMode === 'off' ? (
-          <div className="mouse-hints"><span><b>Wheel</b> slices</span><span><b>Right</b> zoom</span><span><b>Middle</b> pan</span></div>
+          <div className="viewer-interaction-status" aria-live="polite"><span className="viewer-interaction-status__active"><i />{TOOL_LABELS[activeTool] || TOOL_LABELS.window}</span><div className="mouse-hints"><span><b>Wheel</b> slices</span><span><b>Right</b> zoom</span><span><b>Middle</b> pan</span></div></div>
         ) : (
           <div className="edit-live-indicator"><i /> LIVE CORRECTION · LEFT MOUSE {editMode === 'erase' ? 'ERASE' : 'PAINT'}</div>
         )}
@@ -407,10 +502,19 @@ export default function CornerstoneMprViewer({
           </motion.div>
         ) : null}
         {state.status !== 'ready' ? (
-          <div className={`viewport-state-overlay viewport-state-overlay--${state.status}`} role="status">
+          <div className={`viewport-state-overlay viewport-state-overlay--${state.status}`} role="status" aria-live="polite" aria-busy={state.status === 'loading'}>
             {state.status === 'loading' ? <div className="tiny-spinner" /> : <span className="error-glyph">!</span>}
             <strong>{state.status === 'loading' ? 'Preparing clinical workspace' : 'Viewer initialization failed'}</strong>
             <span>{state.message}</span>
+            {state.status === 'error' ? (
+              <button
+                type="button"
+                className="tool-button viewport-retry-button"
+                onClick={() => setViewerRetryToken((value) => value + 1)}
+              >
+                Retry viewer
+              </button>
+            ) : null}
           </div>
         ) : null}
       </div>

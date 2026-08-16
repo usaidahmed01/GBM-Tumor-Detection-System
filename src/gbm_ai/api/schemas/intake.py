@@ -58,6 +58,18 @@ class UnifiedIntakeCreate(BaseModel):
         return value or None
 
 
+class StudyClinicalContextUpdate(BaseModel):
+    age_years: int = Field(ge=18, le=100)
+
+
+class StudyClinicalContextUpdateResponse(BaseModel):
+    study_uuid: uuid.UUID
+    case_reference: str
+    age_years: int
+    age_scope_status: Literal["adult"] = "adult"
+    patient_context_used_as_ml_features: Literal[False] = False
+
+
 class UnifiedIntakeResponse(BaseModel):
     version: Literal["phase8_step4_unified_intake_v1"] = (
         "phase8_step4_unified_intake_v1"

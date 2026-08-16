@@ -1,6 +1,5 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from 'motion/react';
@@ -8,16 +7,15 @@ import { AnimatePresence, motion, MotionConfig, useReducedMotion } from 'motion/
 import {
   fetchReviewHistory,
   fetchViewerManifest,
+  runAnatomicalLocalization,
+  runTumorQuantification,
   submitLabelmapCorrection,
   submitSegmentationReview,
-  VIEWER_UI_VERSION,
 } from '@/lib/api';
 import { MRI_SEQUENCE_OPTIONS, SEGMENT_LEGEND } from '@/lib/viewerAssets';
+import CornerstoneMprViewer from './CornerstoneMprViewer';
 
-const CornerstoneMprViewer = dynamic(() => import('./CornerstoneMprViewer'), {
-  ssr: false,
-  loading: () => <ViewerLoadingState label="Loading medical imaging engine…" />,
-});
+const SEQUENCE_SHORTCUTS = { T1C: '1', T1: '2', T2: '3', FLAIR: '4' };
 
 function Icon({ name, size = 18 }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
@@ -78,9 +76,9 @@ function ReviewPanel({
         aria-label="Clinician review note"
       />
       <div className="review-actions">
-        <motion.button whileTap={{ scale: 0.97 }} disabled={reviewBusy || correctionOpen} className="review-action review-action--accept" onClick={() => onReview('accept')}><Icon name="check" size={15}/>Accept</motion.button>
+        <motion.button whileTap={{ scale: 0.97 }} disabled={reviewBusy || correctionOpen} aria-busy={reviewBusy} className={reviewBusy ? "review-action review-action--accept is-working" : "review-action review-action--accept"} onClick={() => onReview('accept')}>{reviewBusy ? <span className="button-working-mark" aria-hidden="true"/> : <Icon name="check" size={15}/>}Accept</motion.button>
         <motion.button whileTap={{ scale: 0.97 }} disabled={reviewBusy} className="review-action review-action--correct" onClick={correctionOpen ? onCancelCorrection : onOpenCorrection}><Icon name={correctionOpen ? 'x' : 'brush'} size={15}/>{correctionOpen ? 'Cancel edit' : 'Correct mask'}</motion.button>
-        <motion.button whileTap={{ scale: 0.97 }} disabled={reviewBusy || correctionOpen} className="review-action review-action--reject" onClick={() => onReview('reject')}><Icon name="x" size={15}/>Reject</motion.button>
+        <motion.button whileTap={{ scale: 0.97 }} disabled={reviewBusy || correctionOpen} aria-busy={reviewBusy} className={reviewBusy ? "review-action review-action--reject is-working" : "review-action review-action--reject"} onClick={() => onReview('reject')}>{reviewBusy ? <span className="button-working-mark" aria-hidden="true"/> : <Icon name="x" size={15}/>}Reject</motion.button>
       </div>
       <div className="review-history-mini"><Icon name="history" size={14}/><span>{history?.revisions?.length || 0} review revision{history?.revisions?.length === 1 ? '' : 's'}</span></div>
     </section>
@@ -88,18 +86,18 @@ function ReviewPanel({
 }
 
 function RightSidebar(props) {
-  const { manifest } = props;
+  const { manifest, onRetryQuantification, onRetryLocalization, derivedBusy } = props;
   const measurements = manifest?.quantification?.measurements || [];
   const localization = manifest?.localization || {};
   return (
     <aside className="clinical-sidebar">
       <section className="sidebar-section">
         <div className="section-heading"><div><span className="eyebrow">QUANTIFICATION</span><h2>Tumor burden</h2></div><span className={`mini-status ${manifest.quantification.available ? 'mini-status--ok' : ''}`}>{manifest.quantification.available ? 'Current' : manifest.quantification.stale ? 'Stale' : 'Unavailable'}</span></div>
-        {measurements.length ? <div className="metric-stack">{measurements.map((item) => <MeasurementCard key={item.region} item={item}/>)}</div> : <p className="empty-copy">Physical measurements are not available for the current segmentation state.</p>}
+        {measurements.length ? <div className="metric-stack">{measurements.map((item) => <MeasurementCard key={item.region} item={item}/>)}</div> : <div className="sidebar-empty-action"><p className="empty-copy">Physical measurements are not available for the current segmentation state.</p>{manifest.segmentation_review_status !== 'rejected' ? <button type="button" className={derivedBusy === 'quantification' ? 'sidebar-inline-action is-working' : 'sidebar-inline-action'} disabled={Boolean(derivedBusy)} onClick={onRetryQuantification}>{derivedBusy === 'quantification' ? <span className="button-working-mark" aria-hidden="true"/> : null}{derivedBusy === 'quantification' ? 'Recalculating…' : 'Recalculate'}</button> : null}</div>}
       </section>
       <section className="sidebar-section">
         <div className="section-heading"><div><span className="eyebrow">ATLAS LOCALIZATION</span><h2>Anatomical context</h2></div><span className={`mini-status ${localization.available ? 'mini-status--ok' : ''}`}>{localization.available ? 'Registered' : localization.stale ? 'Stale' : 'Unavailable'}</span></div>
-        {localization.available ? <div className="localization-grid"><div><span>Hemisphere</span><strong>{localization.hemisphere || '—'}</strong></div><div><span>Primary region</span><strong>{localization.primary_region || '—'}</strong></div><div className="localization-grid__wide"><span>MNI centroid</span><strong>{localization.centroid_mni_mm?.length === 3 ? `${localization.centroid_mni_mm.map((v) => Number(v).toFixed(1)).join(', ')} mm` : '—'}</strong></div><div className="localization-grid__wide"><span>Registration QC</span><strong className={localization.registration_qc_passed ? 'text-good' : 'text-warn'}>{localization.registration_qc_passed ? 'Validated' : 'Requires review'}</strong></div></div> : <p className="empty-copy">Atlas-derived location is not current for this segmentation.</p>}
+        {localization.available ? <div className="localization-grid"><div><span>Hemisphere</span><strong>{localization.hemisphere || '—'}</strong></div><div><span>Primary region</span><strong>{localization.primary_region || '—'}</strong></div><div className="localization-grid__wide"><span>MNI centroid</span><strong>{localization.centroid_mni_mm?.length === 3 ? `${localization.centroid_mni_mm.map((v) => Number(v).toFixed(1)).join(', ')} mm` : '—'}</strong></div><div className="localization-grid__wide"><span>Registration QC</span><strong className={localization.registration_qc_passed ? 'text-good' : 'text-warn'}>{localization.registration_qc_passed ? 'Validated' : 'Requires review'}</strong></div></div> : <div className="sidebar-empty-action"><p className="empty-copy">Atlas-derived location is not current for this segmentation.</p>{manifest.segmentation_review_status !== 'rejected' ? <button type="button" className={derivedBusy === 'localization' ? 'sidebar-inline-action is-working' : 'sidebar-inline-action'} disabled={Boolean(derivedBusy)} onClick={onRetryLocalization}>{derivedBusy === 'localization' ? <span className="button-working-mark" aria-hidden="true"/> : null}{derivedBusy === 'localization' ? 'Retrying…' : 'Retry localization'}</button> : null}</div>}
       </section>
       <ReviewPanel {...props}/>
       <section className="clinical-notice"><Icon name="alert"/><p><strong>AI-assisted imaging review only.</strong> The SegResNet output delineates glioma-like regions; it is not a definitive GBM diagnosis. Clinician verification is required.</p></section>
@@ -116,7 +114,7 @@ function CorrectionDeck({ mode, setMode, segmentIndex, setSegmentIndex, brushSiz
         <div className="segment-picker" aria-label="Active segmentation region">{SEGMENT_LEGEND.map((segment) => <button key={segment.index} onClick={() => setSegmentIndex(segment.index)} className={segmentIndex === segment.index ? 'segment-choice active' : 'segment-choice'}><i style={{ background: segment.color }}/><strong>{segment.region}</strong><span>{segment.label}</span></button>)}</div>
         <label className="brush-size"><span>Brush</span><input type="range" min="3" max="40" step="1" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))}/><output>{brushSize}px</output></label>
       </div>
-      <div className="correction-deck__actions"><span>{dirty ? 'Unsaved changes' : 'Paint or erase with the left mouse button'}</span><button className="ghost-button" onClick={onCancel} disabled={busy}>Cancel</button><button className="save-correction" onClick={onSave} disabled={busy || !dirty}>{busy ? 'Recalculating…' : 'Save correction & recalculate'}</button></div>
+      <div className="correction-deck__actions"><span>{dirty ? 'Unsaved changes' : 'Paint or erase with the left mouse button'}</span><button className="ghost-button" onClick={onCancel} disabled={busy}>Cancel</button><button className={busy ? "save-correction is-working" : "save-correction"} onClick={onSave} disabled={busy || !dirty} aria-busy={busy}>{busy ? <><span className="button-working-mark" aria-hidden="true"/>Saving changes…</> : 'Save correction & recalculate'}</button></div>
     </motion.div>
   );
 }
@@ -143,6 +141,7 @@ export default function ViewerWorkspace({ studyUuid, caseReference = null }) {
   const [dirty, setDirty] = useState(false);
   const [note, setNote] = useState('');
   const [reviewBusy, setReviewBusy] = useState(false);
+  const [derivedBusy, setDerivedBusy] = useState(null);
   const [toast, setToast] = useState(null);
 
   const reloadViewerState = useCallback(async () => {
@@ -157,22 +156,74 @@ export default function ViewerWorkspace({ studyUuid, caseReference = null }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    setStatus('loading');
-    Promise.all([
-      fetchViewerManifest(studyUuid, { signal: controller.signal }),
-      fetchReviewHistory(studyUuid).catch(() => null),
-    ]).then(([payload, reviewHistory]) => {
-      setManifest(payload); setHistory(reviewHistory); setStatus('ready');
-    }).catch((reason) => {
-      if (reason?.name === 'AbortError') return;
-      setError(reason?.message || 'Unable to load the clinical viewer manifest.'); setStatus('error');
-    });
-    return () => controller.abort();
+    let cancelled = false;
+
+    async function loadViewer() {
+      setStatus('loading'); setError('');
+      try {
+        let payload = await fetchViewerManifest(studyUuid, { signal: controller.signal });
+        const needsDerivedRecovery = payload?.segmentation_review_status !== 'rejected'
+          && (!payload?.quantification?.available || !payload?.localization?.available);
+
+        if (needsDerivedRecovery && !cancelled) {
+          setStatus('deriving');
+          try { await runTumorQuantification(studyUuid); } catch {}
+          try { await runAnatomicalLocalization(studyUuid); } catch {}
+          payload = await fetchViewerManifest(studyUuid, { signal: controller.signal });
+        }
+
+        const reviewHistory = await fetchReviewHistory(studyUuid).catch(() => null);
+        if (cancelled) return;
+        setManifest(payload); setHistory(reviewHistory); setStatus('ready');
+      } catch (reason) {
+        if (reason?.name === 'AbortError' || cancelled) return;
+        setError(reason?.message || 'Unable to load the clinical viewer.'); setStatus('error');
+      }
+    }
+
+    loadViewer();
+    return () => { cancelled = true; controller.abort(); };
   }, [studyUuid]);
 
   const showToast = (kind, message) => {
     setToast({ kind, message, id: Date.now() });
     window.setTimeout(() => setToast(null), 5200);
+  };
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      const target = event.target;
+      if (target?.matches?.('input, textarea, select, [contenteditable="true"]')) return;
+      if (correctionOpen) return;
+      const key = event.key.toLowerCase();
+      const sequenceByKey = { '1': 'T1C', '2': 'T1', '3': 'T2', '4': 'FLAIR' };
+      if (sequenceByKey[key]) {
+        event.preventDefault();
+        setSequence(sequenceByKey[key]);
+      } else if (key === 'o') {
+        event.preventDefault();
+        setOverlayVisible((value) => !value);
+      } else if (key === 'v') {
+        event.preventDefault();
+        setThreeDVisible((value) => !value);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [correctionOpen]);
+
+  const retryDerivedOutput = async (kind) => {
+    setDerivedBusy(kind);
+    try {
+      if (kind === 'quantification') await runTumorQuantification(studyUuid);
+      else await runAnatomicalLocalization(studyUuid);
+      await reloadViewerState();
+      showToast('success', kind === 'quantification' ? 'Tumor measurements updated.' : 'Anatomical localization updated.');
+    } catch (reason) {
+      showToast('error', reason?.message || (kind === 'quantification' ? 'Tumor measurements could not be recalculated.' : 'Anatomical localization could not be updated.'));
+    } finally {
+      setDerivedBusy(null);
+    }
   };
 
   const handleReview = async (action) => {
@@ -181,7 +232,7 @@ export default function ViewerWorkspace({ studyUuid, caseReference = null }) {
       await submitSegmentationReview(studyUuid, action, note);
       await reloadViewerState();
       setNote('');
-      showToast(action === 'accept' ? 'success' : 'warning', action === 'accept' ? 'Segmentation accepted and review provenance recorded.' : 'Segmentation rejected. Volume and atlas location are now blocked for this mask.');
+      showToast(action === 'accept' ? 'success' : 'warning', action === 'accept' ? 'Segmentation accepted. Review status updated.' : 'Segmentation rejected. Volume and atlas location are now blocked for this mask.');
     } catch (reason) {
       showToast('error', reason?.message || 'Review action failed.');
     } finally { setReviewBusy(false); }
@@ -210,32 +261,62 @@ export default function ViewerWorkspace({ studyUuid, caseReference = null }) {
     } finally { setReviewBusy(false); }
   };
 
-  if (status === 'loading') return <main className="workspace-shell workspace-shell--center"><ViewerLoadingState/></main>;
-  if (status === 'error') return <main className="workspace-shell workspace-shell--center"><div className="error-panel glass-panel"><Icon name="alert" size={26}/><div><span className="eyebrow">VIEWER UNAVAILABLE</span><h1>Study could not be opened</h1><p>{error}</p></div><Link href="/" className="button-link">Return home</Link></div></main>;
+  if (status === 'loading' || status === 'deriving') return <main className="workspace-shell workspace-shell--center"><ViewerLoadingState label={status === 'deriving' ? 'Preparing measurements…' : 'Loading MRI viewer…'}/></main>;
+  if (status === 'error') return <main className="workspace-shell workspace-shell--center"><div className="error-panel glass-panel"><Icon name="alert" size={26}/><div><span className="eyebrow">VIEWER UNAVAILABLE</span><h1>Study could not be opened</h1><p>{error}</p></div><div className="error-panel__actions"><button type="button" className="button-link" onClick={() => window.location.reload()}>Retry</button><Link href="/" className="button-link button-link--secondary">Return home</Link></div></div></main>;
 
   return (
     <MotionConfig reducedMotion="user">
       <main className="workspace-shell">
         <header className="workspace-topbar">
-          <div className="topbar-brand"><Link href="/" className="icon-button" aria-label="Back to study launcher"><Icon name="home"/></Link><div className="topbar-brand__mark"><Icon name="scan"/></div><div><span className="eyebrow">NEUROGLIOMA AI · CLINICAL VIEWER</span><div className="topbar-title-row"><h1>Multimodal MRI Review</h1><span className="live-chip"><span/>Protected session</span></div></div></div>
-          <div className="workspace-topbar__right"><div className="study-meta"><div><span>Case</span><strong>{caseReference || "Current analysis"}</strong></div><div><span>Source</span><strong>{manifest.source_format.toUpperCase()}</strong></div><div><span>Orientation</span><strong>{manifest.canonical_orientation}</strong></div><div><span>UI</span><strong>{VIEWER_UI_VERSION.replace('phase8_step3_', '').replace('_v1', '')}</strong></div></div><Link href="/report/current" className="viewer-report-button"><Icon name="file" size={15}/>Report</Link></div>
+          <div className="topbar-brand"><Link href="/" className="icon-button" aria-label="Back to study launcher"><Icon name="home"/></Link><div className="topbar-brand__mark"><Icon name="scan"/></div><div><span className="eyebrow">NEUROGLIOMA AI · CLINICAL VIEWER</span><div className="topbar-title-row"><h1>Multimodal MRI Review</h1><span className="live-chip"><span/>MRI review</span></div></div></div>
+          <div className="workspace-topbar__right"><div className="study-meta"><div><span>Case</span><strong>{caseReference || "Current analysis"}</strong></div><div><span>Source</span><strong>{manifest.source_format.toUpperCase()}</strong></div><div><span>Orientation</span><strong>{manifest.canonical_orientation}</strong></div><div><span>Review</span><strong>{manifest.segmentation_review_status.replaceAll('_',' ')}</strong></div></div><Link href="/report/current" className="viewer-report-button"><Icon name="file" size={15}/>Report</Link></div>
         </header>
 
         <motion.section className="workspace-main" initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
           <div className="viewer-column">
             <div className="viewer-control-deck glass-panel">
-              <div className="sequence-tabs" role="tablist" aria-label="MRI sequence">{MRI_SEQUENCE_OPTIONS.map((option) => <motion.button key={option.value} className={sequence === option.value ? 'sequence-tab sequence-tab--active' : 'sequence-tab'} disabled={correctionOpen} onClick={() => setSequence(option.value)} whileTap={reduceMotion ? undefined : { scale: 0.97 }} role="tab" aria-selected={sequence === option.value}><strong>{option.label}</strong><span>{option.description}</span></motion.button>)}</div>
-              <div className="overlay-control"><button disabled={correctionOpen} className={overlayVisible ? 'overlay-toggle overlay-toggle--on' : 'overlay-toggle'} onClick={() => setOverlayVisible((value) => !value)} aria-pressed={overlayVisible}><Icon name="layers" size={16}/>AI overlay<span className="toggle-track"><span/></span></button><label><span>Opacity</span><input type="range" min="0.1" max="0.8" step="0.05" value={overlayOpacity} onChange={(event) => setOverlayOpacity(Number(event.target.value))} disabled={!overlayVisible}/><output>{Math.round(overlayOpacity * 100)}%</output></label></div>
+              <div className="sequence-tabs" role="tablist" aria-label="MRI sequence">
+                {MRI_SEQUENCE_OPTIONS.map((option) => (
+                  <motion.button
+                    key={option.value}
+                    className={sequence === option.value ? 'sequence-tab sequence-tab--active' : 'sequence-tab'}
+                    disabled={correctionOpen}
+                    onClick={() => setSequence(option.value)}
+                    whileTap={reduceMotion ? undefined : { scale: 0.97 }}
+                    role="tab"
+                    aria-selected={sequence === option.value}
+                    aria-keyshortcuts={SEQUENCE_SHORTCUTS[option.value]}
+                    title={`${option.label} · ${SEQUENCE_SHORTCUTS[option.value]}`}
+                  >
+                    <strong>{option.label}</strong><span>{option.description}</span><kbd>{SEQUENCE_SHORTCUTS[option.value]}</kbd>
+                  </motion.button>
+                ))}
+              </div>
+              <div className="overlay-control">
+                <button
+                  disabled={correctionOpen}
+                  className={overlayVisible ? 'overlay-toggle overlay-toggle--on' : 'overlay-toggle'}
+                  onClick={() => setOverlayVisible((value) => !value)}
+                  aria-pressed={overlayVisible}
+                  aria-keyshortcuts="O"
+                  title="Toggle AI overlay · O"
+                >
+                  <Icon name="layers" size={16}/>AI overlay<kbd>O</kbd><span className="toggle-track"><span/></span>
+                </button>
+                <label><span>Opacity</span><input type="range" min="0.1" max="0.8" step="0.05" value={overlayOpacity} onChange={(event) => setOverlayOpacity(Number(event.target.value))} disabled={!overlayVisible}/><output>{Math.round(overlayOpacity * 100)}%</output></label>
+              </div>
               <div className="three-d-launch-control">
                 <button
                   disabled={correctionOpen}
                   className={threeDVisible ? 'three-d-toggle three-d-toggle--on' : 'three-d-toggle'}
                   onClick={() => setThreeDVisible((value) => !value)}
                   aria-pressed={threeDVisible}
+                  aria-keyshortcuts="V"
+                  title="Toggle 3D review · V"
                 >
                   <Icon name="cube" size={16}/>
                   <span><strong>3D review</strong><small>{threeDVisible ? 'Volume viewport active' : 'Open on demand'}</small></span>
-                  <i>{threeDVisible ? 'ON' : 'OFF'}</i>
+                  <kbd>V</kbd><i>{threeDVisible ? 'ON' : 'OFF'}</i>
                 </button>
               </div>
             </div>
@@ -262,10 +343,10 @@ export default function ViewerWorkspace({ studyUuid, caseReference = null }) {
               onThreeDModeChange={setThreeDMode}
             />
 
-            <div className="viewer-footer-strip"><div className="segmentation-legend">{SEGMENT_LEGEND.map((item) => <span key={item.region}><i style={{ background: item.color }}/>{item.region}<small>{item.label}</small></span>)}</div><div className="viewer-provenance"><span>Segmentation {manifest.segmentation_uuid.slice(0, 8)}…</span><span>Canonical {manifest.canonical_orientation}</span><span>Checksums verified server-side</span><span>{threeDVisible ? `3D ${threeDMode.toUpperCase()} review` : '3D review on demand'}</span></div></div>
+            <div className="viewer-footer-strip"><div className="segmentation-legend">{SEGMENT_LEGEND.map((item) => <span key={item.region}><i style={{ background: item.color }}/>{item.region}<small>{item.label}</small></span>)}</div><div className="viewer-provenance"><span>Segmentation review</span><span>{manifest.canonical_orientation} orientation</span><span>{threeDVisible ? `3D ${threeDMode.toUpperCase()} review` : '3D review available'}</span><span className="viewer-shortcuts-summary">1–4 sequences · W/P/Z tools · O overlay · V 3D</span></div></div>
           </div>
 
-          <RightSidebar manifest={manifest} correctionOpen={correctionOpen} onOpenCorrection={openCorrection} onCancelCorrection={cancelCorrection} onReview={handleReview} reviewBusy={reviewBusy} note={note} setNote={setNote} history={history}/>
+          <RightSidebar manifest={manifest} correctionOpen={correctionOpen} onOpenCorrection={openCorrection} onCancelCorrection={cancelCorrection} onReview={handleReview} reviewBusy={reviewBusy} note={note} setNote={setNote} history={history} derivedBusy={derivedBusy} onRetryQuantification={() => retryDerivedOutput('quantification')} onRetryLocalization={() => retryDerivedOutput('localization')}/>
         </motion.section>
 
         <AnimatePresence>

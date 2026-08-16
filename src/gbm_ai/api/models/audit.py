@@ -45,6 +45,7 @@ class AuditAction(str, enum.Enum):
     LOCALIZATION_COMPLETED = "localization_completed"
     DECISION_FUSED = "decision_fused"
     REPORT_FINALIZED = "report_finalized"
+    CLINICAL_CONTEXT_UPDATED = "clinical_context_updated"
 
 
 class AuditEntityType(str, enum.Enum):
@@ -97,6 +98,7 @@ class AuditLog(Base):
             name="audit_action",
             native_enum=False,
             validate_strings=True,
+            length=64,
         ),
         nullable=False,
     )
@@ -106,6 +108,7 @@ class AuditLog(Base):
             name="audit_entity_type",
             native_enum=False,
             validate_strings=True,
+            length=64,
         ),
         nullable=False,
     )

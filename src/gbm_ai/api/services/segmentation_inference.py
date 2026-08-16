@@ -457,6 +457,9 @@ def run_segmentation_inference(
         )
 
     segmentation = Segmentation(
+        # Allocate the UUID before writing it into study JSON. SQLAlchemy column
+        # defaults are otherwise applied only at flush/INSERT time.
+        id=uuid.uuid4(),
         analysis_run_id=analysis.id,
         status=SegmentationStatus.GENERATED,
         model_input_checksum_sha256=str(model_input["checksum_sha256"]),

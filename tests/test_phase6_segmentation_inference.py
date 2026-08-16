@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from datetime import date
 from io import BytesIO
 from pathlib import Path
@@ -194,6 +195,9 @@ def test_successful_inference_creates_analysis_model_registry_and_segmentation(m
     assert segmentation is not None
     assert segmentation.review_status == SegmentationReviewStatus.UNREVIEWED
     assert segmentation.weights_checksum_sha256 == BUNDLE_MODEL_SHA256
+    inference_summary = dict(study.segmentation_preparation_summary or {}).get("inference") or {}
+    assert uuid.UUID(str(inference_summary["segmentation_uuid"])) == segmentation.id
+    assert uuid.UUID(str(inference_summary["analysis_run_uuid"])) == run.id
     assert segmentation.voxel_counts["TC"] == 3
     assert segmentation.voxel_counts["WT"] == 7
     assert segmentation.voxel_counts["ET"] == 2

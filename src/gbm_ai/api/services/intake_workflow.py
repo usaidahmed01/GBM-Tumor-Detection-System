@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from gbm_ai.api.models.analysis import SourceFormat, Study, StudyStatus
+from gbm_ai.api.models.audit import AuditAction, AuditActorType, AuditEntityType
 from gbm_ai.api.models.clinical import (
     Assessment,
     AssessmentStatus,
@@ -15,6 +16,7 @@ from gbm_ai.api.models.clinical import (
     ScopeStatus,
 )
 from gbm_ai.api.schemas.intake import UnifiedIntakeCreate
+from gbm_ai.api.services.audit import record_audit_event
 
 
 UNIFIED_INTAKE_VERSION = "phase8_step4_unified_intake_v1"
@@ -123,4 +125,44 @@ def create_unified_intake(db: Session, payload: UnifiedIntakeCreate) -> dict:
         "patient_context_used_as_ml_features": False,
         "clinical_validation_claimed": False,
         "next_step": "upload_mri",
+    }
+
+
+def update_study_patient_age(
+    db: Session,
+    study: Study,
+    age_years: int,
+    *,
+    request_id: str | None = None,
+) -> dict:
+    assessment = db.get(Assessment, study.assessment_id)
+    if assessment is None:
+        raise RuntimeError("study assessment not found")
+    patient = db.get(Patient, assessment.patient_id)
+    if patient is None:
+        raise RuntimeError("assessment patient not found")
+
+    patient.age_years = int(age_years)
+    record_audit_event(
+        db,
+        action=AuditAction.CLINICAL_CONTEXT_UPDATED,
+        entity_type=AuditEntityType.STUDY,
+        entity_uuid=study.id,
+        actor_type=AuditActorType.DEMO_USER,
+        request_id=request_id,
+        technical_context={
+            "operation": "clinical_context_update",
+            "age_scope_status": "adult",
+            "patient_context_used_as_ml_features": False,
+        },
+        commit=False,
+    )
+    db.commit()
+    db.refresh(patient)
+    return {
+        "study_uuid": study.id,
+        "case_reference": patient.patient_id,
+        "age_years": patient.age_years,
+        "age_scope_status": "adult",
+        "patient_context_used_as_ml_features": False,
     }

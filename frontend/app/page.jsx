@@ -54,7 +54,7 @@ export default function HomePage() {
           <article><span>03</span><div><strong>Clinician-first viewer</strong><p>Orthographic MRI review, segmentation editing, quantitative measurements and provenance.</p></div></article>
         </section>
 
-        {recent.length ? <section className="ng-recent-section"><div className="ng-section-title"><div><h2>Recent analyses</h2></div></div><div className="ng-recent-grid">{recent.map((item) => <article key={item.studyUuid} className="ng-recent-card"><div><span className="status-dot"/><strong>{item.caseReference}</strong><small>{item.sourceFormat ? item.sourceFormat.toUpperCase() : 'MRI intake'} · {item.stage || 'created'}</small></div><Link href={item.stage === 'viewer_ready' ? '/viewer/current' : '/analysis/new?resume=1'} onClick={() => resumeCase(item)}>Continue <span>→</span></Link></article>)}</div></section> : null}
+        {recent.length ? <section className="ng-recent-section"><div className="ng-section-title"><div><h2>Recent analyses</h2></div></div><div className="ng-recent-grid">{recent.map((item) => <Link key={item.studyUuid} className="ng-recent-card" href={item.stage === 'viewer_ready' ? '/viewer/current' : '/analysis/new?resume=1'} onClick={() => resumeCase(item)} aria-label={`Continue ${item.caseReference}`}><div><span className="status-dot"/><strong>{item.caseReference}</strong><small>{item.sourceFormat ? item.sourceFormat.toUpperCase() : 'MRI intake'} · {item.stage || 'created'}</small></div><span className="ng-recent-card__action">Continue <span>→</span></span></Link>)}</div></section> : null}
 
         <footer className="ng-home-footer"><span>NeuroGlioma AI</span></footer>
       </main>

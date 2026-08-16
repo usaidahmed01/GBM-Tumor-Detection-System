@@ -18,7 +18,22 @@ export function assetByAlias(manifest, alias) {
 }
 
 export function loaderUrlForAsset(asset) {
-  return proxyApiUrl(asset?.loader_url || asset?.download_url);
+  const proxied = proxyApiUrl(asset?.loader_url || asset?.download_url);
+  if (!proxied) return null;
+
+  // Cornerstone's NIfTI loader constructs a native URL object internally.
+  // A root-relative Next.js proxy path (for example /gbm-api/...) is valid for
+  // fetch(), but is not valid for new URL(relativePath) without an explicit
+  // base. Resolve it to an absolute same-origin URL before handing it to the
+  // loader. Absolute external URLs are preserved as-is.
+  try {
+    const base = typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : 'http://localhost';
+    return new URL(proxied, base).href;
+  } catch {
+    return null;
+  }
 }
 
 export function mriAssetForSequence(manifest, sequence) {

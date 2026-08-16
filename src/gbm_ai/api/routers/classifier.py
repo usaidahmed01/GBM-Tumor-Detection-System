@@ -3,11 +3,12 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from gbm_ai.api.config import Settings
 from gbm_ai.api.dependencies import get_app_settings, get_db_session, get_object_store
-from gbm_ai.api.models.analysis import Study
+from gbm_ai.api.models.analysis import AnalysisRun, AnalysisStatus, Study
 from gbm_ai.api.schemas.classifier import ClassifierRunResponse, ClassifierRuntimeStatusResponse
 from gbm_ai.api.services.classifier_runtime import (
     CLASSIFIER_RUNTIME_VERSION,
@@ -25,6 +26,20 @@ def _study_or_404(db: Session, study_uuid: uuid.UUID) -> Study:
     if study is None:
         raise HTTPException(status_code=404, detail="study not found")
     return study
+
+
+def _response_from_analysis(analysis: AnalysisRun) -> ClassifierRunResponse:
+    return ClassifierRunResponse(
+        analysis_run_uuid=analysis.id,
+        study_uuid=analysis.study_id,
+        model_version_uuid=analysis.classifier_model_version_id,
+        runtime_version=CLASSIFIER_RUNTIME_VERSION,
+        raw_probability_gbm=analysis.raw_probability_gbm,
+        calibrated_probability_gbm=analysis.calibrated_probability_gbm,
+        decision_state=analysis.decision_state,
+        qc_state=analysis.qc_state,
+        safety_reason_codes=list(analysis.safety_reason_codes or []),
+    )
 
 
 @router.get(
@@ -55,14 +70,29 @@ def run_classifier(
     except ClassifierRuntimeError as exc:
         raise HTTPException(status_code=409, detail={"code": exc.code, "message": str(exc)})
 
-    return ClassifierRunResponse(
-        analysis_run_uuid=analysis.id,
-        study_uuid=study.id,
-        model_version_uuid=analysis.classifier_model_version_id,
-        runtime_version=CLASSIFIER_RUNTIME_VERSION,
-        raw_probability_gbm=analysis.raw_probability_gbm,
-        calibrated_probability_gbm=analysis.calibrated_probability_gbm,
-        decision_state=analysis.decision_state,
-        qc_state=analysis.qc_state,
-        safety_reason_codes=list(analysis.safety_reason_codes or []),
+    return _response_from_analysis(analysis)
+
+
+@router.get(
+    "/studies/{study_uuid}/classifier/current",
+    response_model=ClassifierRunResponse,
+    summary="Get the latest completed standalone 2D classifier result",
+)
+def current_classifier_result(
+    study_uuid: uuid.UUID,
+    db: Session = Depends(get_db_session),
+) -> ClassifierRunResponse:
+    _study_or_404(db, study_uuid)
+    analysis = db.scalar(
+        select(AnalysisRun)
+        .where(
+            AnalysisRun.study_id == study_uuid,
+            AnalysisRun.classifier_model_version_id.is_not(None),
+            AnalysisRun.status == AnalysisStatus.COMPLETE,
+        )
+        .order_by(AnalysisRun.completed_at.desc(), AnalysisRun.created_at.desc())
+        .limit(1)
     )
+    if analysis is None:
+        raise HTTPException(status_code=404, detail="classifier result not found")
+    return _response_from_analysis(analysis)

@@ -43,5 +43,12 @@
     "The deployment strategy is frozen as an ensemble across all five development folds; no single fold is deployed in isolation.",
     "This runtime is currently intended only for standalone 2D raster image studies that have already passed capability routing.",
     "Volumetric DICOM/NIfTI to 2D bridge remains unvalidated and stays blocked elsewhere in the system."
-  ]
+  ],
+  "checkpoint_sha256": {
+    "efficientnetv2s_fold0_best_model.pt": "e996bea99a7b1e2ca60e96fc8b5dc783afc0d6671325bb83486d458819f2520c",
+    "efficientnetv2s_fold1_best_model.pt": "3ed6b41b22056898ef4c4c48daa5dd4368a9389ef4ed5d831573f027f9b62e08",
+    "efficientnetv2s_fold2_best_model.pt": "1ab1059a0e1f5bbf00123c1059ffa81cdd876cf0e7f95b53183fd23d29a1d247",
+    "efficientnetv2s_fold3_best_model.pt": "6c25e266adf89e0a1bee72dbbb0392a456e4ec1235969d8c9fce1d94c6aa5a91",
+    "efficientnetv2s_fold4_best_model.pt": "9f4952120de8e202c2b795f41f7dc96999bec1046b6dee5e9b76eba59c81b106"
+  }
 }
