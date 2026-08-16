@@ -43,6 +43,7 @@ class AuditAction(str, enum.Enum):
     SEGMENTATION_JOB_FAILED = "segmentation_job_failed"
     QUANTIFICATION_COMPLETED = "quantification_completed"
     LOCALIZATION_COMPLETED = "localization_completed"
+    DECISION_FUSED = "decision_fused"
     REPORT_FINALIZED = "report_finalized"
 
 

@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'GBM CDSS | Clinical MRI Viewer',
-  description: 'Research clinical decision-support MRI review workspace.',
+  title: 'NeuroGlioma AI | Clinical MRI Viewer',
+  description: 'Neuro-oncology MRI decision-support and review workspace.',
 };
 
 export default function RootLayout({ children }) {

@@ -1,98 +1,62 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { motion, MotionConfig, useReducedMotion } from 'motion/react';
+import { getRecentCases, setActiveCase } from '@/lib/activeCase';
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function BrandMark() {
+  return <div className="brand-mark" aria-hidden="true"><span className="brand-mark__ring"/><span className="brand-mark__cross brand-mark__cross--v"/><span className="brand-mark__cross brand-mark__cross--h"/><span className="brand-mark__core"/></div>;
+}
 
-function Mark() {
-  return (
-    <div className="brand-mark" aria-hidden="true">
-      <span className="brand-mark__ring" />
-      <span className="brand-mark__cross brand-mark__cross--v" />
-      <span className="brand-mark__cross brand-mark__cross--h" />
-      <span className="brand-mark__core" />
-    </div>
-  );
+function FlowNode({ index, label, detail, active }) {
+  return <div className={active ? 'home-flow-node home-flow-node--active' : 'home-flow-node'}><span>{index}</span><div><strong>{label}</strong><small>{detail}</small></div></div>;
 }
 
 export default function HomePage() {
-  const router = useRouter();
   const reduceMotion = useReducedMotion();
-  const [studyUuid, setStudyUuid] = useState('');
-  const [error, setError] = useState('');
+  const [recent, setRecent] = useState([]);
+  useEffect(() => setRecent(getRecentCases()), []);
 
-  function openStudy(event) {
-    event.preventDefault();
-    const normalized = studyUuid.trim();
-    if (!UUID_PATTERN.test(normalized)) {
-      setError('Enter a valid study UUID from a completed volumetric analysis.');
-      return;
-    }
-    setError('');
-    router.push(`/viewer/${normalized}`);
+  function resumeCase(item) {
+    setActiveCase(item);
   }
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className="launch-shell">
-        <div className="ambient ambient--one" />
-        <div className="ambient ambient--two" />
-        <motion.section
-          className="launch-card glass-panel"
-          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.985 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <div className="launch-card__brand">
-            <Mark />
-            <div>
-              <div className="eyebrow">GBM CDSS · RESEARCH WORKSPACE</div>
-              <h1>Clinical MRI Viewer</h1>
-            </div>
-          </div>
+      <main className="ng-home-shell">
+        <div className="ambient ambient--one"/><div className="ambient ambient--two"/><div className="ng-grid-glow"/>
+        <header className="ng-home-nav">
+          <div className="ng-home-brand"><BrandMark/><div><span className="eyebrow">AI-ASSISTED NEURO-ONCOLOGY WORKSPACE</span><strong>NeuroGlioma AI</strong></div></div>
+          <div className="ng-nav-actions"><Link href="/analysis/new" className="ng-nav-button">New analysis</Link></div>
+        </header>
 
-          <p className="launch-copy">
-            Review a completed multimodal MRI analysis in synchronized orthographic views with
-            AI segmentation overlays, quantitative measurements and atlas-derived localization.
-          </p>
+        <section className="ng-hero">
+          <motion.div className="ng-hero-copy" initial={reduceMotion ? {opacity:0}:{opacity:0,y:18}} animate={{opacity:1,y:0}} transition={{duration:.55}}>
+            <span className="ng-kicker"><i/> MULTIMODAL MRI · SEGMENTATION · QUANTIFICATION</span>
+            <h1>Clinical MRI intelligence,<br/><em>built for review.</em></h1>
+            <p>Upload a compatible brain MRI study, validate its imaging context, run guarded AI analysis, and review tumor segmentation, measurements and atlas-derived localization in one workflow.</p>
+            <div className="ng-hero-actions"><Link href="/analysis/new" className="ng-primary-cta">Start new MRI analysis <span>→</span></Link><a href="#workflow" className="ng-secondary-cta">See workflow</a></div>
+            <div className="ng-trust-row"><span>4-channel MRI</span><span>WT / TC / ET</span><span>3-plane MPR</span><span>Human review</span></div>
+          </motion.div>
 
-          <div className="launch-feature-row" aria-label="Viewer capabilities">
-            <span>3-plane MPR</span>
-            <span>WT / TC / ET</span>
-            <span>Protected assets</span>
-          </div>
+          <motion.div className="ng-hero-console glass-panel" initial={reduceMotion ? {opacity:0}:{opacity:0,scale:.97,x:18}} animate={{opacity:1,scale:1,x:0}} transition={{duration:.65,delay:.08}}>
+            <div className="ng-console-top"><div><span className="eyebrow">ANALYSIS PIPELINE</span><strong>MRI analysis pipeline</strong></div><span className="ng-console-status"><i/> Ready</span></div>
+            <div className="ng-brain-orbit" aria-hidden="true"><div className="ng-orbit ng-orbit--1"/><div className="ng-orbit ng-orbit--2"/><div className="ng-orbit ng-orbit--3"/><div className="ng-brain-core"><span/><span/><span/><span/></div><div className="ng-scan-line"/></div>
+            <div className="ng-flow-stack"><FlowNode index="01" label="Intake & MRI QC" detail="Format, scope, sequence and spatial checks" active/><FlowNode index="02" label="3D AI analysis" detail="SegResNet · WT / TC / ET"/><FlowNode index="03" label="Clinical review" detail="MPR overlays · volume · atlas context"/></div>
+            
+          </motion.div>
+        </section>
 
-          <form className="study-launch-form" onSubmit={openStudy}>
-            <label htmlFor="studyUuid">Study UUID</label>
-            <div className="study-launch-form__row">
-              <input
-                id="studyUuid"
-                value={studyUuid}
-                onChange={(event) => setStudyUuid(event.target.value)}
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                autoComplete="off"
-                spellCheck="false"
-              />
-              <motion.button
-                type="submit"
-                whileHover={reduceMotion ? undefined : { scale: 1.02 }}
-                whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-              >
-                Open viewer
-                <span aria-hidden="true">→</span>
-              </motion.button>
-            </div>
-            {error ? <div className="form-error" role="alert">{error}</div> : null}
-          </form>
+        <section id="workflow" className="ng-feature-strip">
+          <article><span>01</span><div><strong>One guided intake</strong><p>Clinical context, MRI upload and guided study creation.</p></div></article>
+          <article><span>02</span><div><strong>Safety-gated processing</strong><p>QC and capability routing decide what the current input can safely support.</p></div></article>
+          <article><span>03</span><div><strong>Clinician-first viewer</strong><p>Orthographic MRI review, segmentation editing, quantitative measurements and provenance.</p></div></article>
+        </section>
 
-          <div className="research-notice">
-            <span className="status-dot" />
-            AI-assisted research prototype. Segmentation is not a definitive GBM diagnosis and
-            clinician verification remains required.
-          </div>
-        </motion.section>
+        {recent.length ? <section className="ng-recent-section"><div className="ng-section-title"><div><h2>Recent analyses</h2></div></div><div className="ng-recent-grid">{recent.map((item) => <article key={item.studyUuid} className="ng-recent-card"><div><span className="status-dot"/><strong>{item.caseReference}</strong><small>{item.sourceFormat ? item.sourceFormat.toUpperCase() : 'MRI intake'} · {item.stage || 'created'}</small></div><Link href={item.stage === 'viewer_ready' ? '/viewer/current' : '/analysis/new?resume=1'} onClick={() => resumeCase(item)}>Continue <span>→</span></Link></article>)}</div></section> : null}
+
+        <footer className="ng-home-footer"><span>NeuroGlioma AI</span></footer>
       </main>
     </MotionConfig>
   );

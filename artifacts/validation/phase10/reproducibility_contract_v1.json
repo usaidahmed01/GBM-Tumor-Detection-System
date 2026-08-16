@@ -1,0 +1,30 @@
+{
+  "version": "phase10_step3_reproducibility_contract_v1",
+  "product_name": "NeuroGlioma AI",
+  "python_minimum": "3.11",
+  "node_minimum_major": 20,
+  "required_repository_files": [
+    "requirements.txt",
+    ".env.example",
+    "alembic.ini",
+    "frontend/package.json",
+    "frontend/.env.local.example"
+  ],
+  "frontend_lockfile": "frontend/package-lock.json",
+  "single_python_requirements_policy": true,
+  "generated_paths_that_must_not_be_tracked": [
+    "frontend/.next",
+    "frontend/node_modules",
+    "var/storage",
+    "var/model_bundles",
+    "var/localization_atlas",
+    "var/validation",
+    ".phase10-clean-venv"
+  ],
+  "external_runtime_assets": [
+    "five frozen EfficientNetV2-S fold checkpoints",
+    "MONAI brats_mri_segmentation frozen bundle",
+    "TemplateFlow/Harvard-Oxford localization assets"
+  ],
+  "clinical_validation_claimed": false
+}

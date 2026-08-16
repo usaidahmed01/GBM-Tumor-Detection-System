@@ -1,0 +1,47 @@
+{
+  "deployment_version": "phase9_step2_classifier_deployment_v1",
+  "runtime_version": "phase9_step2_classifier_runtime_v1",
+  "deployment_strategy_frozen": true,
+  "selected_architecture": "EfficientNetV2-S",
+  "selected_architecture_code_name": "efficientnet_v2_s",
+  "seed": 42,
+  "ensemble_strategy": "5-fold mean-logit ensemble",
+  "folds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "input_spec": {
+    "channels": 3,
+    "height": 384,
+    "width": 384,
+    "color_mode": "rgb",
+    "normalization": "imagenet_default"
+  },
+  "checkpoint_root_default": "var/models/classifier/efficientnetv2s_seed42",
+  "checkpoint_filenames": [
+    "efficientnetv2s_fold0_best_model.pt",
+    "efficientnetv2s_fold1_best_model.pt",
+    "efficientnetv2s_fold2_best_model.pt",
+    "efficientnetv2s_fold3_best_model.pt",
+    "efficientnetv2s_fold4_best_model.pt"
+  ],
+  "calibration": {
+    "method": "single frozen temperature scaling",
+    "temperature": 0.6612441279730941,
+    "source_summary": "artifacts/calibration/efficientnetv2s_seed42/cross_fitted_temperatures.csv"
+  },
+  "probability_thresholds": {
+    "T_low": 0.13,
+    "T_high": 0.57
+  },
+  "safety_policy_reference": "artifacts/safety/fusion/classifier_safety_policy_v1.json",
+  "locked_test_used": false,
+  "notes": [
+    "The deployment strategy is frozen as an ensemble across all five development folds; no single fold is deployed in isolation.",
+    "This runtime is currently intended only for standalone 2D raster image studies that have already passed capability routing.",
+    "Volumetric DICOM/NIfTI to 2D bridge remains unvalidated and stays blocked elsewhere in the system."
+  ]
+}

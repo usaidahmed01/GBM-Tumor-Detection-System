@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -65,7 +66,7 @@ class ViewerLocalizationSummaryResponse(BaseModel):
 
 class ClinicalViewerManifestResponse(BaseModel):
     version: Literal["phase8_step1_clinical_viewer_backend_v1"]
-    ui_version: Literal["phase8_step2_cornerstone3d_readonly_ui_v1"]
+    ui_version: Literal["phase8_step3_clinician_mask_review_v1"]
     status: Literal["ready"]
     study_uuid: uuid.UUID
     source_format: Literal["dicom", "nifti"]
@@ -84,8 +85,54 @@ class ClinicalViewerManifestResponse(BaseModel):
     overlays_available: Literal[True] = True
     three_dimensional_asset_basis_ready: Literal[True] = True
     cornerstone_or_ohif_frontend_implemented: Literal[True] = True
-    manual_mask_editing_implemented: Literal[False] = False
+    manual_mask_editing_implemented: Literal[True] = True
+    clinician_accept_reject_implemented: Literal[True] = True
+    immutable_review_history_implemented: Literal[True] = True
+    downstream_recalculation_after_edit: Literal[True] = True
     clinician_verification_required: Literal[True] = True
     segmentation_is_gbm_diagnosis: Literal[False] = False
     clinical_validation_claimed: Literal[False] = False
-    next_step: Literal["phase8_step3_clinician_mask_review_and_correction"]
+    next_step: Literal["phase8_step5_3d_volume_and_surface_review"]
+
+
+class SegmentationReviewRequest(BaseModel):
+    action: Literal["accept", "reject"]
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class SegmentationReviewRevisionResponse(BaseModel):
+    revision_uuid: uuid.UUID
+    revision_number: int = Field(ge=1)
+    action: Literal["accept", "reject", "edit"]
+    source_review_status: Literal["unreviewed", "accepted", "edited", "rejected"]
+    result_review_status: Literal["unreviewed", "accepted", "edited", "rejected"]
+    source_mask_checksums: dict[str, str]
+    result_mask_checksums: dict[str, str]
+    modified_voxel_count: int = Field(ge=0)
+    note: str | None = None
+    downstream_quantification_policy: str
+    downstream_localization_policy: str
+    created_at: datetime
+
+
+class SegmentationReviewResponse(BaseModel):
+    version: Literal["phase8_step3_clinician_mask_review_v1"]
+    status: Literal["complete"]
+    segmentation_uuid: uuid.UUID
+    review_status: Literal["unreviewed", "accepted", "edited", "rejected"]
+    clinician_modified: bool
+    revision: SegmentationReviewRevisionResponse
+    current_mask_checksums: dict[str, str]
+    downstream: dict[str, str | None]
+    segmentation_is_gbm_diagnosis: Literal[False] = False
+    clinical_validation_claimed: Literal[False] = False
+
+
+class SegmentationReviewHistoryResponse(BaseModel):
+    version: Literal["phase8_step3_clinician_mask_review_v1"]
+    segmentation_uuid: uuid.UUID
+    current_review_status: Literal["unreviewed", "accepted", "edited", "rejected"]
+    clinician_modified: bool
+    revisions: list[SegmentationReviewRevisionResponse]
+    immutable_history: Literal[True] = True
+    clinical_validation_claimed: Literal[False] = False

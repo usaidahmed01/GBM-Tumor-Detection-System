@@ -1,0 +1,17 @@
+{
+  "version": "phase10_step3_engineering_performance_budget_v1",
+  "scope": "engineering smoke budgets only; not clinical latency claims",
+  "synthetic_storage_payload_mib": 8,
+  "hard_gates": {
+    "storage_write_min_mib_per_second": 0.5,
+    "storage_checksum_read_min_mib_per_second": 0.5,
+    "json_serialization_max_seconds": 5.0,
+    "queue_regression_max_seconds": 180.0,
+    "frontend_build_max_seconds": 300.0
+  },
+  "notes": [
+    "Budgets are deliberately loose failure/stall guards for development hardware.",
+    "They are not clinical performance targets and do not represent hospital deployment latency.",
+    "Full SegResNet inference timing depends on study geometry and CPU/GPU availability and is recorded separately when real compatible test data are available."
+  ]
+}

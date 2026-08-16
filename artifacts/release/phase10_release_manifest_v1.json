@@ -1,0 +1,44 @@
+{
+  "release_manifest_version": "phase10_step4_release_manifest_v1",
+  "product_name": "NeuroGlioma AI",
+  "formal_project_title": "AI-Based Clinical Decision Support System for Early Identification of Glioblastoma Multiforme",
+  "release_stage": "university_demo_release_candidate",
+  "completed_phases": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "phase10_steps_complete_before_this_patch": [
+    1,
+    2,
+    3
+  ],
+  "phase10_step4_scope": [
+    "release_packaging",
+    "free_tier_first_deployment_blueprint",
+    "git_lock_recovery_helper",
+    "release_verification"
+  ],
+  "deployment_policy": {
+    "paid_model_api_required": false,
+    "free_tier_first": true,
+    "recommended_frontend": "Vercel Hobby",
+    "recommended_api": "Google Cloud Run scale-to-zero",
+    "recommended_database": "Neon Free",
+    "recommended_object_storage": "Cloudflare R2 free allowance",
+    "durable_cloud_object_storage_adapter_status": "not_yet_enabled",
+    "clinical_deployment_claimed": false
+  },
+  "known_release_gates": [
+    "Five frozen classifier checkpoints must be present before 2D runtime is READY.",
+    "Durable cloud MRI object storage must be enabled/validated before claiming persistent hosted study storage.",
+    "External/manual clinical validation remains outside the current project evidence."
+  ]
+}

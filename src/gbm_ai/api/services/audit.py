@@ -48,6 +48,15 @@ ALLOWED_TECHNICAL_CONTEXT_KEYS = {
     "brain_scope_status",
     "eligible_capability_count",
     "review_capability_count",
+    "decision_state",
+    "decision_fusion_version",
+    "report_ready",
+    "classifier_evidence_available",
+    "segmentation_evidence_available",
+    "report_version",
+    "report_checksum_sha256",
+    "decision_analysis_run_uuid",
+    "signoff_identity_verified",
 }
 
 

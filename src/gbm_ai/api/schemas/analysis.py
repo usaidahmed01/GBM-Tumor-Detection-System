@@ -122,6 +122,9 @@ class AnalysisRunRead(BaseModel):
     calibrated_probability_gbm: float | None
     decision_state: DecisionState
     safety_reason_codes: list[str]
+    decision_fusion_version: str | None
+    decision_evidence_summary: dict
+    decision_fused_at: datetime | None
     started_at: datetime | None
     completed_at: datetime | None
     created_at: datetime

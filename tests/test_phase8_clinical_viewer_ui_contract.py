@@ -18,6 +18,25 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = PROJECT_ROOT / "frontend"
 
 
+FRONTEND_EXCLUDED_DIRS = {"node_modules", ".next", "out", ".turbo", ".cache"}
+
+
+def _frontend_project_files(*suffixes: str) -> list[Path]:
+    """Return only first-party frontend source/config files, never dependency/build trees."""
+    wanted = set(suffixes)
+    files: list[Path] = []
+    for path in FRONTEND.rglob("*"):
+        if not path.is_file():
+            continue
+        relative_parts = path.relative_to(FRONTEND).parts
+        if any(part in FRONTEND_EXCLUDED_DIRS for part in relative_parts):
+            continue
+        if wanted and path.suffix not in wanted:
+            continue
+        files.append(path)
+    return files
+
+
 def _study():
     channels = []
     for sequence in ("T1C", "T1", "T2", "FLAIR"):
@@ -60,7 +79,7 @@ def _segmentation():
 
 def test_phase8_step2_versions_and_loader_safe_route_are_registered():
     assert CLINICAL_VIEWER_BACKEND_VERSION == "phase8_step1_clinical_viewer_backend_v1"
-    assert CLINICAL_VIEWER_UI_VERSION == "phase8_step2_cornerstone3d_readonly_ui_v1"
+    assert CLINICAL_VIEWER_UI_VERSION in {"phase8_step2_cornerstone3d_readonly_ui_v1", "phase8_step3_clinician_mask_review_v1"}
     paths = create_app().openapi()["paths"]
     assert "/api/v1/studies/{study_uuid}/viewer/manifest" in paths
     assert "/api/v1/studies/{study_uuid}/viewer/assets/{asset_alias}" in paths
@@ -124,26 +143,34 @@ def test_clinical_viewer_ui_has_mpr_sequences_overlay_tools_and_medical_safety_c
     assert "clinician verification" in workspace.lower()
 
 
-def test_step2_is_read_only_and_does_not_claim_manual_mask_correction():
-    frontend_files = list(FRONTEND.rglob("*.jsx")) + list(FRONTEND.rglob("*.js"))
+def test_step2_foundational_viewer_capabilities_remain_after_later_review_steps():
+    frontend_files = _frontend_project_files(".jsx", ".js")
     source = "\n".join(path.read_text(encoding="utf-8") for path in frontend_files)
-    forbidden_runtime_tools = (
-        "BrushTool",
-        "SphereScissorsTool",
-        "RectangleScissorsTool",
-        "CircleScissorsTool",
-    )
-    for name in forbidden_runtime_tools:
-        assert name not in source
-    assert "Manual brush/erase editing" in (FRONTEND / "README.md").read_text(encoding="utf-8")
+    for term in ("WindowLevelTool", "PanTool", "ZoomTool", "StackScrollTool", "mask_labelmap"):
+        assert term in source
 
 
-def test_frontend_does_not_expose_internal_storage_paths_or_patient_identifiers():
-    frontend_files = [
-        path for path in FRONTEND.rglob("*")
-        if path.is_file() and path.suffix in {".js", ".jsx", ".css", ".md", ".mjs", ".json"}
+def test_clinical_viewer_does_not_expose_internal_storage_paths_or_patient_identifiers():
+    # Phase 8 Step 4 intentionally adds a clinical intake form that may collect
+    # patient context. The privacy boundary being tested here belongs to the
+    # viewer/result feed, not to the entire first-party frontend source tree.
+    viewer_roots = [
+        FRONTEND / "app" / "viewer",
+        FRONTEND / "components" / "viewer",
     ]
-    source = "\n".join(path.read_text(encoding="utf-8") for path in frontend_files)
+    viewer_files: list[Path] = []
+    for root in viewer_roots:
+        if not root.exists():
+            continue
+        viewer_files.extend(path for path in root.rglob("*.jsx") if path.is_file())
+        viewer_files.extend(path for path in root.rglob("*.js") if path.is_file())
+
+    for path in (FRONTEND / "lib" / "viewerAssets.js", FRONTEND / "lib" / "activeCase.js"):
+        if path.exists():
+            viewer_files.append(path)
+
+    assert viewer_files, "Expected first-party clinical viewer files to exist"
+    source = "\n".join(path.read_text(encoding="utf-8") for path in viewer_files)
     assert "/var/storage" not in source
     assert "storage_key" not in source
     assert "patient_name" not in source

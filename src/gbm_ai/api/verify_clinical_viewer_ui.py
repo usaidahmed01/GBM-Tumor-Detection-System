@@ -47,8 +47,8 @@ def main() -> None:
     cornerstone_source = cornerstone_path.read_text(encoding="utf-8")
     workspace_source = workspace_path.read_text(encoding="utf-8")
     styles = style_path.read_text(encoding="utf-8")
-    if any(name in cornerstone_source for name in ("BrushTool", "SphereScissorsTool")):
-        raise RuntimeError("Step 2 must remain read-only; editing tools belong to Step 3")
+    # Step 2 established the read-only MPR foundation. Later Phase 8 steps may
+    # legitimately add editing tools while preserving that viewer foundation.
     if "/var/storage" in workspace_source or "storage_key" in workspace_source:
         raise RuntimeError("frontend must not expose internal object-storage paths")
 
@@ -72,11 +72,11 @@ def main() -> None:
     print("Motion micro-interactions:        IMPLEMENTED")
     print("Reduced-motion support:           IMPLEMENTED")
     print("Responsive medical layout:        IMPLEMENTED")
-    print("Manual mask editing:              NOT IMPLEMENTED IN STEP 2")
-    print("Clinician accept/reject:          NOT IMPLEMENTED IN STEP 2")
+    print("Manual mask editing:              AVAILABLE IN CURRENT PHASE 8 STATE")
+    print("Clinician accept/reject:          AVAILABLE IN CURRENT PHASE 8 STATE")
     print("Segmentation equals diagnosis:    NO")
     print("Clinical validation claimed:      NO")
-    print("Next step:                         PHASE 8 STEP 3 — MASK REVIEW & CORRECTION")
+    print("Step 2 read-only viewer baseline: PRESERVED")
     print("Phase 8 Step 2 foundation:        READY")
 
 

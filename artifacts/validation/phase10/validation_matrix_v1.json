@@ -1,0 +1,213 @@
+{
+  "version": "phase10_step2_validation_matrix_v1",
+  "phase": "Phase 10 \u2014 Validation & hardening",
+  "scope": "Automated regression matrix plus explicit external/manual validation prerequisites.",
+  "principles": [
+    "Do not convert missing external data/model assets into false PASS results.",
+    "Do not run unsupported 2D classifier inference on DICOM/NIfTI extracted slices.",
+    "Do not report physical volume for standalone 2D raster inputs.",
+    "Do not treat segmentation as GBM diagnosis.",
+    "Do not claim clinical validation from automated engineering tests."
+  ],
+  "automated_groups": [
+    {
+      "id": "foundation_security",
+      "title": "Backend, storage, audit and repository hardening",
+      "tests": [
+        "tests/test_phase4_backend_foundation.py",
+        "tests/test_phase4_storage.py",
+        "tests/test_phase4_audit.py",
+        "tests/test_phase10_step1_hardening.py"
+      ]
+    },
+    {
+      "id": "upload_qc_routing",
+      "title": "Unified upload, QC, de-identification and capability routing",
+      "tests": [
+        "tests/test_phase5_format_detection.py",
+        "tests/test_phase5_upload_intake.py",
+        "tests/test_phase5_dicom_deidentification.py",
+        "tests/test_phase5_mri_qc.py",
+        "tests/test_phase5_capability_routing.py"
+      ]
+    },
+    {
+      "id": "classifier_safety",
+      "title": "2D classifier deployment, safety and guarded decision fusion",
+      "tests": [
+        "tests/test_phase2_calibration_thresholds.py",
+        "tests/test_phase3_tta_uncertainty.py",
+        "tests/test_phase3_ood_detection.py",
+        "tests/test_phase3_safety_fusion.py",
+        "tests/test_phase9_classifier_runtime.py",
+        "tests/test_phase9_decision_fusion.py"
+      ]
+    },
+    {
+      "id": "segmentation_pipeline",
+      "title": "3D segmentation gates, preparation, inference and durable jobs",
+      "tests": [
+        "tests/test_phase6_segmentation_preflight.py",
+        "tests/test_phase6_segmentation_volume_preparation.py",
+        "tests/test_phase6_segmentation_model_geometry.py",
+        "tests/test_phase6_segmentation_model_input.py",
+        "tests/test_phase6_segmentation_inference.py",
+        "tests/test_phase6_segmentation_background_jobs.py"
+      ]
+    },
+    {
+      "id": "quantification_localization",
+      "title": "Physical tumor quantification and anatomical localization",
+      "tests": [
+        "tests/test_phase7_tumor_quantification.py",
+        "tests/test_phase7_anatomical_localization.py"
+      ]
+    },
+    {
+      "id": "viewer_review_report",
+      "title": "Clinical viewer, mask review, responsive UI and report workflow",
+      "tests": [
+        "tests/test_phase8_clinical_viewer_foundation.py",
+        "tests/test_phase8_clinical_viewer_ui_contract.py",
+        "tests/test_phase8_segmentation_review_correction.py",
+        "tests/test_phase8_3d_volume_review.py",
+        "tests/test_phase9_clinical_report.py",
+        "tests/test_phase9_report_ui.py",
+        "tests/test_phase9_true_responsive_ui.py",
+        "tests/test_phase9_frontend_polish.py"
+      ]
+    }
+  ],
+  "critical_failure_modes": [
+    {
+      "id": "zip_path_traversal",
+      "evidence": "test_phase5_upload_intake.py",
+      "expected": "blocked"
+    },
+    {
+      "id": "archive_bomb_high_ratio",
+      "evidence": "test_phase5_upload_intake.py",
+      "expected": "blocked"
+    },
+    {
+      "id": "oversized_request",
+      "evidence": "test_phase5_upload_intake.py",
+      "expected": "HTTP 413"
+    },
+    {
+      "id": "missing_t1c",
+      "evidence": "test_phase5_capability_routing.py",
+      "expected": "3D segmentation blocked"
+    },
+    {
+      "id": "invalid_nifti_reused_channel",
+      "evidence": "test_phase5_capability_routing.py",
+      "expected": "mapping rejected"
+    },
+    {
+      "id": "pediatric_or_prior_treatment",
+      "evidence": "test_phase5_capability_routing.py",
+      "expected": "current V1 analysis blocked"
+    },
+    {
+      "id": "volumetric_2d_bridge",
+      "evidence": "test_phase9_decision_fusion.py",
+      "expected": "GBM classification remains indeterminate"
+    },
+    {
+      "id": "low_probability_false_reassurance",
+      "evidence": "test_phase9_decision_fusion.py",
+      "expected": "other abnormality warning retained"
+    },
+    {
+      "id": "classifier_segmentation_disagreement",
+      "evidence": "test_phase9_decision_fusion.py",
+      "expected": "indeterminate"
+    },
+    {
+      "id": "stale_background_worker",
+      "evidence": "test_phase6_segmentation_background_jobs.py",
+      "expected": "recover/requeue or fail at limit"
+    },
+    {
+      "id": "rejected_segmentation",
+      "evidence": "test_phase8_segmentation_review_correction.py",
+      "expected": "downstream measurements invalidated/blocked"
+    },
+    {
+      "id": "unreviewed_segmentation_report",
+      "evidence": "test_phase9_decision_fusion.py",
+      "expected": "final report blocked"
+    }
+  ],
+  "external_or_manual_cases": [
+    {
+      "id": "real_jpg_classifier_runtime",
+      "status": "requires_local_classifier_checkpoints",
+      "required": [
+        "5 frozen EfficientNetV2-S fold checkpoints"
+      ],
+      "purpose": "Validate real standalone 2D inference on an eligible image study."
+    },
+    {
+      "id": "real_nifti_multimodal_e2e",
+      "status": "requires_deidentified_test_case_and_runtime_assets",
+      "required": [
+        "T1C",
+        "T1",
+        "T2",
+        "FLAIR",
+        "MONAI bundle",
+        "localization assets"
+      ],
+      "purpose": "Exercise upload -> QC -> mapping -> segmentation -> quantification -> localization -> viewer -> report."
+    },
+    {
+      "id": "real_dicom_multiseries_e2e",
+      "status": "requires_deidentified_test_case_and_runtime_assets",
+      "required": [
+        "compatible DICOM series",
+        "T1C",
+        "T1",
+        "T2",
+        "FLAIR",
+        "MONAI bundle",
+        "localization assets"
+      ],
+      "purpose": "Exercise DICOM de-identification, series mapping and full 3D path."
+    },
+    {
+      "id": "browser_visual_review",
+      "status": "manual",
+      "required": [
+        "completed compatible 3D study"
+      ],
+      "purpose": "Verify MPR orientation, overlays, editing, 3D review and responsive layout visually."
+    },
+    {
+      "id": "print_pdf_review",
+      "status": "manual",
+      "required": [
+        "finalizable report"
+      ],
+      "purpose": "Verify print stylesheet and browser Save-as-PDF output."
+    },
+    {
+      "id": "large_study_performance",
+      "status": "deferred_to_phase10_performance_step",
+      "required": [
+        "large de-identified DICOM study",
+        "timing/memory capture"
+      ],
+      "purpose": "Measure upload, preprocessing and job behavior under larger workloads."
+    },
+    {
+      "id": "authentication_authorization",
+      "status": "not_claimed_current_v1",
+      "required": [
+        "future auth/RBAC implementation"
+      ],
+      "purpose": "Authorization testing is not represented as complete because auth/RBAC is intentionally absent in current V1."
+    }
+  ]
+}

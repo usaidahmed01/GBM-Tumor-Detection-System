@@ -436,6 +436,17 @@ class AnalysisRun(TimestampMixin, Base):
         nullable=False,
         default=list,
     )
+    decision_fusion_version: Mapped[str | None] = mapped_column(
+        String(128), nullable=True
+    )
+    decision_evidence_summary: Mapped[dict] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    decision_fused_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     started_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

@@ -10,12 +10,12 @@ from sqlalchemy.orm import Session
 from gbm_ai.api.models.analysis import AnalysisRun, AnalysisStatus, SourceFormat, Study
 from gbm_ai.api.models.localization import AnatomicalLocalization
 from gbm_ai.api.models.quantification import TumorQuantification
-from gbm_ai.api.models.segmentation import Segmentation, SegmentationStatus
+from gbm_ai.api.models.segmentation import Segmentation, SegmentationReviewStatus, SegmentationStatus
 from gbm_ai.api.storage.local import LocalObjectStore
 
 
 CLINICAL_VIEWER_BACKEND_VERSION = "phase8_step1_clinical_viewer_backend_v1"
-CLINICAL_VIEWER_UI_VERSION = "phase8_step2_cornerstone3d_readonly_ui_v1"
+CLINICAL_VIEWER_UI_VERSION = "phase8_step3_clinician_mask_review_v1"
 VIEWER_PRIMARY_REFERENCE_SEQUENCE = "T1C"
 VIEWER_PLANES = ("axial", "coronal", "sagittal")
 VIEWER_MODEL_SEQUENCES = ("T1C", "T1", "T2", "FLAIR")
@@ -183,9 +183,13 @@ def _latest_quantification_state(
         return None, False
 
     expected_checksums = _segmentation_checksums(segmentation)
+    # Accept/reject are review-state changes, not new geometry. Acceptance keeps
+    # measurements current when mask checksums and clinician-modified state still
+    # match. Rejection intentionally suppresses all physical/location outputs.
+    if segmentation.review_status == SegmentationReviewStatus.REJECTED:
+        return None, True
     current = (
-        latest.source_review_status == segmentation.review_status.value
-        and bool(latest.source_clinician_modified) == bool(segmentation.clinician_modified)
+        bool(latest.source_clinician_modified) == bool(segmentation.clinician_modified)
         and dict(latest.source_mask_checksums or {}) == expected_checksums
         and bool(latest.physical_volume_generated)
     )
@@ -377,11 +381,14 @@ def build_clinical_viewer_manifest(
         "overlays_available": True,
         "three_dimensional_asset_basis_ready": True,
         "cornerstone_or_ohif_frontend_implemented": True,
-        "manual_mask_editing_implemented": False,
+        "manual_mask_editing_implemented": True,
+        "clinician_accept_reject_implemented": True,
+        "immutable_review_history_implemented": True,
+        "downstream_recalculation_after_edit": True,
         "clinician_verification_required": True,
         "segmentation_is_gbm_diagnosis": False,
         "clinical_validation_claimed": False,
-        "next_step": "phase8_step3_clinician_mask_review_and_correction",
+        "next_step": "phase8_step5_3d_volume_and_surface_review",
     }
 
 

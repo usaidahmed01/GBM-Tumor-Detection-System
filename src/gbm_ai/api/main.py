@@ -17,8 +17,12 @@ from gbm_ai.api.routers.system import router as system_router
 from gbm_ai.api.routers.qc import router as qc_router
 from gbm_ai.api.routers.quantification import router as quantification_router
 from gbm_ai.api.routers.localization import router as localization_router
+from gbm_ai.api.routers.intake import router as intake_router
 from gbm_ai.api.routers.viewer import router as viewer_router
+from gbm_ai.api.routers.decision import router as decision_router
 from gbm_ai.api.routers.uploads import router as uploads_router
+from gbm_ai.api.routers.classifier import router as classifier_router
+from gbm_ai.api.routers.report import router as report_router
 from gbm_ai.api.storage.local import LocalObjectStore
 
 
@@ -63,6 +67,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     prefix = resolved_settings.api_v1_prefix
     app.include_router(system_router, prefix=prefix)
     app.include_router(clinical_router, prefix=prefix)
+    app.include_router(intake_router, prefix=prefix)
     app.include_router(analysis_router, prefix=prefix)
     app.include_router(uploads_router, prefix=prefix)
     app.include_router(dicom_router, prefix=prefix)
@@ -72,6 +77,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(quantification_router, prefix=prefix)
     app.include_router(localization_router, prefix=prefix)
     app.include_router(viewer_router, prefix=prefix)
+    app.include_router(decision_router, prefix=prefix)
+    app.include_router(classifier_router, prefix=prefix)
+    app.include_router(report_router, prefix=prefix)
     return app
 
 

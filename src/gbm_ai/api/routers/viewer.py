@@ -2,14 +2,19 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from gbm_ai.api.config import Settings
 from gbm_ai.api.dependencies import get_app_settings, get_db_session, get_object_store
 from gbm_ai.api.models.audit import AuditAction, AuditActorType, AuditEntityType
-from gbm_ai.api.schemas.viewer import ClinicalViewerManifestResponse
+from gbm_ai.api.schemas.viewer import (
+    ClinicalViewerManifestResponse,
+    SegmentationReviewHistoryResponse,
+    SegmentationReviewRequest,
+    SegmentationReviewResponse,
+)
 from gbm_ai.api.services.analysis_records import StudyNotFoundError, get_study
 from gbm_ai.api.services.audit import record_audit_event
 from gbm_ai.api.services.clinical_viewer import (
@@ -20,6 +25,13 @@ from gbm_ai.api.services.clinical_viewer import (
     resolve_viewer_asset,
 )
 from gbm_ai.api.storage.local import LocalObjectStore
+from gbm_ai.api.models.segmentation import SegmentationReviewAction
+from gbm_ai.api.services.segmentation_review import (
+    SegmentationReviewServiceError,
+    apply_labelmap_correction,
+    review_history,
+    review_segmentation,
+)
 
 
 router = APIRouter(tags=["viewer"])
@@ -205,3 +217,108 @@ def clinical_viewer_asset_with_filename(
         db=db,
         storage=storage,
     )
+
+
+@router.post(
+    "/studies/{study_uuid}/viewer/review",
+    response_model=SegmentationReviewResponse,
+    summary="Accept or reject the current segmentation with append-only review provenance",
+)
+def clinical_viewer_review(
+    study_uuid: uuid.UUID,
+    payload: SegmentationReviewRequest,
+    request: Request,
+    db: Session = Depends(get_db_session),
+):
+    try:
+        study = get_study(db, study_uuid)
+    except StudyNotFoundError:
+        raise HTTPException(status_code=404, detail="study not found")
+    try:
+        return review_segmentation(
+            db,
+            study,
+            action=SegmentationReviewAction(payload.action),
+            note=payload.note,
+            request_id=getattr(request.state, "request_id", None),
+        )
+    except SegmentationReviewServiceError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": exc.code, "message": str(exc)},
+        )
+
+
+@router.post(
+    "/studies/{study_uuid}/viewer/corrections",
+    response_model=SegmentationReviewResponse,
+    summary=(
+        "Persist a clinician-edited raw uint8 BraTS labelmap with optimistic "
+        "checksum concurrency and recalculate dependent measurements"
+    ),
+)
+async def clinical_viewer_correction(
+    study_uuid: uuid.UUID,
+    request: Request,
+    source_checksum_sha256: str = Form(...),
+    note: str | None = Form(default=None),
+    labelmap: UploadFile = File(...),
+    db: Session = Depends(get_db_session),
+    storage: LocalObjectStore = Depends(get_object_store),
+    settings: Settings = Depends(get_app_settings),
+):
+    try:
+        study = get_study(db, study_uuid)
+    except StudyNotFoundError:
+        raise HTTPException(status_code=404, detail="study not found")
+
+    # The exact byte-count is validated again against the persisted 3D shape in
+    # the service. This read cap prevents an accidental multipart payload from
+    # turning a one-byte-per-voxel correction into an unbounded memory read.
+    summary = dict(study.segmentation_preparation_summary or {})
+    inference = dict(summary.get("inference") or {})
+    max_voxels = int(settings.segmentation_inference_max_spatial_voxels)
+    raw = await labelmap.read(max_voxels + 1)
+    if len(raw) > max_voxels:
+        raise HTTPException(
+            status_code=413,
+            detail="edited labelmap exceeds the configured spatial-voxel safety limit",
+        )
+    try:
+        return apply_labelmap_correction(
+            db,
+            storage,
+            study,
+            raw_labelmap_bytes=raw,
+            source_checksum_sha256=source_checksum_sha256,
+            atlas_root=settings.localization_atlas_root_resolved,
+            note=note,
+            request_id=getattr(request.state, "request_id", None),
+        )
+    except SegmentationReviewServiceError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": exc.code, "message": str(exc)},
+        )
+
+
+@router.get(
+    "/studies/{study_uuid}/viewer/review/history",
+    response_model=SegmentationReviewHistoryResponse,
+    summary="Read immutable clinician segmentation-review revision history",
+)
+def clinical_viewer_review_history(
+    study_uuid: uuid.UUID,
+    db: Session = Depends(get_db_session),
+):
+    try:
+        study = get_study(db, study_uuid)
+    except StudyNotFoundError:
+        raise HTTPException(status_code=404, detail="study not found")
+    try:
+        return review_history(db, study)
+    except SegmentationReviewServiceError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": exc.code, "message": str(exc)},
+        )

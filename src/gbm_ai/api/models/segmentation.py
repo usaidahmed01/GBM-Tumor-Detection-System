@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Index, Integer, JSON, String, Uuid
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Index, Integer, JSON, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from gbm_ai.api.models.base import Base, TimestampMixin
@@ -162,3 +162,79 @@ class Segmentation(TimestampMixin, Base):
     physical_volume_generated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     anatomical_localization_generated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     clinical_validation_claimed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+class SegmentationReviewAction(str, enum.Enum):
+    ACCEPT = "accept"
+    REJECT = "reject"
+    EDIT = "edit"
+
+
+class SegmentationReviewRevision(Base):
+    """Append-only provenance for clinician review and labelmap corrections."""
+
+    __tablename__ = "segmentation_review_revisions"
+    __table_args__ = (
+        Index(
+            "ux_segmentation_review_revision_number",
+            "segmentation_id",
+            "revision_number",
+            unique=True,
+        ),
+        Index(
+            "ix_segmentation_review_revision_created",
+            "segmentation_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    segmentation_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("segmentations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    revision_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    review_version: Mapped[str] = mapped_column(String(128), nullable=False)
+    action: Mapped[SegmentationReviewAction] = mapped_column(
+        Enum(
+            SegmentationReviewAction,
+            name="segmentation_review_action",
+            native_enum=False,
+            validate_strings=True,
+        ),
+        nullable=False,
+    )
+    source_review_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    result_review_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    # These protected provenance snapshots intentionally stay server-side.
+    # Public history responses expose checksums, not storage keys.
+    source_artifacts: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    result_artifacts: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    modified_voxel_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    note: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    downstream_quantification_policy: Mapped[str] = mapped_column(String(128), nullable=False)
+    downstream_localization_policy: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+from sqlalchemy import event as _review_event
+
+
+@_review_event.listens_for(SegmentationReviewRevision, "before_update")
+def _prevent_segmentation_review_revision_update(mapper, connection, target) -> None:
+    raise RuntimeError(
+        "SegmentationReviewRevision records are append-only and cannot be updated."
+    )
+
+
+@_review_event.listens_for(SegmentationReviewRevision, "before_delete")
+def _prevent_segmentation_review_revision_delete(mapper, connection, target) -> None:
+    raise RuntimeError(
+        "SegmentationReviewRevision records are append-only and cannot be deleted."
+    )

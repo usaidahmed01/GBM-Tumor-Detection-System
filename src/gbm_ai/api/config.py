@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     # available and otherwise uses CPU. The spatial-voxel guard is rechecked
     # immediately before the real SegResNet forward path.
     segmentation_inference_device: Literal["auto", "cpu", "cuda"] = "auto"
+
+    # Phase 9 Step 2 frozen standalone 2D classifier runtime. Checkpoints are
+    # kept outside source control and mounted locally for deployment/runtime.
+    classifier_checkpoint_root: Path = Path("var/models/classifier/efficientnetv2s_seed42")
+    classifier_inference_device: Literal["auto", "cpu", "cuda"] = "auto"
     segmentation_inference_max_spatial_voxels: int = Field(
         default=20_000_000,
         ge=32 * 32 * 32,
@@ -124,6 +129,10 @@ class Settings(BaseSettings):
     def localization_atlas_root_resolved(self) -> Path:
         return self.localization_atlas_root.expanduser().resolve()
 
+    @property
+    def classifier_checkpoint_root_resolved(self) -> Path:
+        return self.classifier_checkpoint_root.expanduser().resolve()
+
     def safe_summary(self) -> dict[str, object]:
         return {
             "app_name": self.app_name,
@@ -139,6 +148,8 @@ class Settings(BaseSettings):
             "storage_root": str(self.storage_root),
             "segmentation_bundle_root": str(self.segmentation_bundle_root),
             "localization_atlas_root": str(self.localization_atlas_root),
+            "classifier_checkpoint_root": str(self.classifier_checkpoint_root),
+            "classifier_inference_device": self.classifier_inference_device,
             "segmentation_inference_device": self.segmentation_inference_device,
             "segmentation_inference_max_spatial_voxels": self.segmentation_inference_max_spatial_voxels,
             "segmentation_job_lease_seconds": self.segmentation_job_lease_seconds,
