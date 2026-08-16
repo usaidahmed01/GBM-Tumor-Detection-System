@@ -1,0 +1,49 @@
+{
+  "deployment_contract_version": "phase10_step5a_oracle_always_free_arm64_v1",
+  "provider": "Oracle Cloud Infrastructure",
+  "compute_target": "VM.Standard.A1.Flex",
+  "architecture": "linux/arm64",
+  "operating_system_target": "Ubuntu LTS ARM64",
+  "account_policy": {
+    "always_free_only": true,
+    "upgrade_to_paid_account": false,
+    "paid_model_api_required": false,
+    "clinical_deployment_claimed": false
+  },
+  "conservative_always_free_compute_budget": {
+    "ocpus": 2,
+    "memory_gb": 12,
+    "notes": "Use the conservative Always Free tenancy limit documented for post-trial free accounts; do not provision paid excess capacity."
+  },
+  "container": {
+    "docker_platform": "linux/arm64",
+    "preflight_target": "oracle-arm64-preflight",
+    "runtime_target": "api",
+    "inference_device": "cpu"
+  },
+  "runtime_asset_policy": {
+    "classifier_checkpoints_in_git": false,
+    "classifier_checkpoints_in_image": false,
+    "monai_bundle_in_git": false,
+    "monai_bundle_in_image": false,
+    "localization_atlas_in_git": false,
+    "localization_atlas_in_image": false,
+    "patient_mri_in_git": false,
+    "patient_mri_in_image": false
+  },
+  "preflight_acceptance": [
+    "Docker buildx builds the oracle-arm64-preflight target for linux/arm64.",
+    "The loaded image reports architecture arm64.",
+    "pip check passes inside the ARM64 image.",
+    "PyTorch, TorchVision, MONAI, SimpleITK, NiBabel and application imports pass on ARM64.",
+    "EfficientNetV2-S and the frozen SegResNet architecture construct successfully on CPU.",
+    "No model checkpoint, patient MRI or secret is embedded into the image."
+  ],
+  "not_validated_by_this_preflight": [
+    "Full SegResNet inference latency on Oracle A1",
+    "Peak RAM during full 3D inference",
+    "Classifier checkpoint inference",
+    "Persistent hosted MRI storage",
+    "Clinical performance or clinical validation"
+  ]
+}

@@ -30,15 +30,24 @@
     "paid_model_api_required": false,
     "free_tier_first": true,
     "recommended_frontend": "Vercel Hobby",
-    "recommended_api": "Google Cloud Run scale-to-zero",
+    "recommended_api": "Oracle Cloud Always Free Ampere A1 VM + Docker",
     "recommended_database": "Neon Free",
-    "recommended_object_storage": "Cloudflare R2 free allowance",
-    "durable_cloud_object_storage_adapter_status": "not_yet_enabled",
-    "clinical_deployment_claimed": false
+    "recommended_object_storage": "Oracle Always Free persistent block volume for initial demo runtime",
+    "durable_cloud_object_storage_adapter_status": "not_required_for_initial_vm_deployment; persistence validation still required",
+    "clinical_deployment_claimed": false,
+    "oracle_account_upgrade_to_paid": false,
+    "oracle_arm64_preflight_required": true
   },
   "known_release_gates": [
+    "Oracle linux/arm64 Docker preflight must pass before the Always Free A1 VM is created.",
     "Five frozen classifier checkpoints must be present before 2D runtime is READY.",
     "Durable cloud MRI object storage must be enabled/validated before claiming persistent hosted study storage.",
     "External/manual clinical validation remains outside the current project evidence."
+  ],
+  "phase10_step5a_scope": [
+    "oracle_always_free_deployment_freeze",
+    "linux_arm64_docker_dependency_preflight",
+    "arm64_model_architecture_construction_smoke",
+    "no_paid_account_upgrade_policy"
   ]
 }

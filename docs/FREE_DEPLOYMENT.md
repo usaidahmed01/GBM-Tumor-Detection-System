@@ -8,9 +8,9 @@ It must not be described as a clinical production deployment.
 | Layer | Free-tier-first target | Purpose |
 |---|---|---|
 | Web UI | Vercel Hobby | Next.js frontend |
-| API container | Google Cloud Run, scale-to-zero | FastAPI backend |
+| API container | Oracle Cloud Always Free Ampere A1 VM + Docker | FastAPI + CPU AI runtime |
 | PostgreSQL | Neon Free | Application/audit database |
-| MRI object storage | Cloudflare R2 free monthly allowance | Protected study/derived objects once the remote object-store adapter is enabled |
+| MRI/model runtime storage | Oracle Always Free block volume initially | Persistent private runtime assets on the VM; never Git |
 | 2D classifier weights | Runtime-managed private assets | Never commit weights to Git |
 | MONAI bundle / atlas | Runtime-managed cache/assets | Never commit downloaded model/atlas assets to Git |
 
@@ -33,19 +33,20 @@ The current 3D SegResNet path is CPU/memory intensive. A free hosted environment
 4. Set `GBM_DATABASE_URL` only as a secret/environment variable.
 5. Run `alembic upgrade head` against the deployment database before public testing.
 
-### 2. Backend — Google Cloud Run
+### 2. Backend — Oracle Cloud Always Free Ampere A1 + Docker
 
-The root `Dockerfile` builds the FastAPI API only. It deliberately excludes frontend build output, patient/MRI data, local model caches and local secrets.
+The root `Dockerfile` now has an `oracle-arm64-preflight` target and the normal `api` runtime target. Before creating the Oracle VM, run `scripts/run_oracle_arm64_preflight.ps1` to prove the full Python/native dependency stack builds for `linux/arm64`.
 
-Recommended demo settings:
+Frozen free-account policy:
 
-- minimum instances: `0`
-- maximum instances: `1`
-- request authentication/public access: choose according to demo needs
+- `VM.Standard.A1.Flex` only
+- conservative Always Free allocation: at most `2 OCPUs / 12 GB RAM` total
+- CPU inference only
+- do not upgrade the Oracle account to Pay As You Go for this project
 - environment: `production`
 - debug: `false`
 - database URL: secret environment variable
-- model/runtime assets: mounted or downloaded by an explicit deployment procedure, never from Git
+- model/runtime assets: persistent runtime volume, never Git or the container image
 
 Do not place real patient data into an academic public deployment.
 
@@ -54,15 +55,17 @@ Do not place real patient data into an academic public deployment.
 Import the GitHub repository and choose `frontend` as the Vercel project root.
 Set:
 
-`GBM_BACKEND_ORIGIN=https://YOUR-CLOUD-RUN-SERVICE`
+`GBM_BACKEND_ORIGIN=https://YOUR-ORACLE-BACKEND-HOST`
 
 The browser continues to call the Next.js `/gbm-api/*` proxy rather than embedding the backend URL throughout the UI.
 
-### 4. Object storage — Cloudflare R2
+### 4. Runtime MRI/model storage — Oracle persistent volume
 
-R2 is the preferred zero-cost-capable object-storage target because the project must not rely on an ephemeral container filesystem for durable MRI objects.
+For the initial university/demo deployment, keep private model bundles, atlas files and temporary/protected MRI objects on persistent Oracle block storage attached to the A1 VM. They remain outside Git and outside the Docker image.
 
-The current source release still defaults to the protected local object-store implementation. Do **not** claim durable cloud MRI storage until the R2/S3 adapter has been enabled and validated. Until then, hosted API deployments are demonstration-only and uploaded objects can be treated as ephemeral.
+A later S3-compatible object-store adapter can still be added if needed, but it is not required to prove the first free Docker deployment. Hosted persistence must be validated before claiming durable study retention.
+
+Until hosted persistence has been validated, this remains **demonstration-only**. Do **not** claim durable cloud MRI storage.
 
 ## Free deployment acceptance gate
 
