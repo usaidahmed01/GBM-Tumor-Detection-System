@@ -10,7 +10,8 @@ def test_report_ui_routes_and_workspace_exist():
     assert (ROOT / "frontend/app/report/current/page.jsx").exists()
     assert (ROOT / "frontend/app/report/[studyUuid]/page.jsx").exists()
     workspace = (ROOT / "frontend/components/report/ReportWorkspace.jsx").read_text(encoding="utf-8")
-    assert "phase9_step4_report_ui_v1" in workspace
+    assert "phase9_step4_report_ui_v1" not in workspace
+    assert "Case {safeCaseReference}" in workspace
     assert "Print / Save PDF" in workspace
     assert "window.print()" in workspace
     assert "Finalize report" in workspace

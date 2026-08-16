@@ -11,8 +11,6 @@ import {
   fuseStudyDecision,
 } from '@/lib/api';
 
-const REPORT_UI_VERSION = 'phase9_step4_report_ui_v1';
-
 function Icon({ name, size = 18 }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
   const icons = {
@@ -208,7 +206,7 @@ export default function ReportWorkspace({ studyUuid, caseReference = null }) {
 
             {isFinal ? <section className="report-signature"><div><span>Reviewed / signed by</span><strong>{finalized.clinician_name}</strong><small>{formatDate(finalized.signed_at)}</small></div><div><span>Report checksum</span><strong className="mono">{finalized.report_checksum_sha256}</strong><small>Finalized report record</small></div>{finalized.clinician_comment ? <div className="report-signature__comment"><span>Reviewer comment</span><p>{finalized.clinician_comment}</p></div> : null}</section> : null}
 
-            <footer className="report-print-footer"><span>NeuroGlioma AI</span><span>{REPORT_UI_VERSION}</span></footer>
+            <footer className="report-print-footer"><span>NeuroGlioma AI</span><span>Case {safeCaseReference}</span></footer>
           </article>
 
           <aside className="report-side no-print">
